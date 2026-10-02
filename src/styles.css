@@ -183,4 +183,13 @@ th{color:var(--ink-2);font-weight:600}
 .steps{display:flex;gap:6px;margin-bottom:14px}
 .steps i{flex:1;height:4px;border-radius:2px;background:var(--line)}
 .steps i.on{background:var(--strength)}
+/* explicação dos itens da avaliação */
+.expl{margin-top:6px}
+.expl summary{color:var(--strength);font-weight:600;cursor:pointer;padding:6px 0;list-style:none}
+.expl summary::-webkit-details-marker{display:none}
+.expl summary::after{content:" ▾"}
+.expl[open] summary::after{content:" ▴"}
+.expl > div{background:var(--surface-2);border-radius:var(--radius-sm);padding:10px 12px;margin-top:4px}
+.expl p{margin:0 0 8px}
+.expl p:last-child{margin-bottom:0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}

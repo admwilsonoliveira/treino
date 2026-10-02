@@ -66,7 +66,13 @@ export function diagnostico(){
     d.itens.push({ k: "Gordura corporal", v: gord, fmt: 1, un: "%", txt: c || "", nivel: nivelGordura(c), ref: p.sexo === "F" ? "Boa forma: 21% a 24%" : "Boa forma: 14% a 17%" });
     d.itens.push({ k: "Massa gorda", v: mg, fmt: 1, un: "kg" });
     d.itens.push({ k: "Massa magra", v: mm, fmt: 1, un: "kg", txt: "músculos, ossos, órgãos e água" });
-    if (alt){ const ffmi = mm / Math.pow(alt / 100, 2); d.ffmi = ffmi; d.itens.push({ k: "Índice de massa magra", v: ffmi, fmt: 1, txt: p.sexo === "F" ? (ffmi < 14 ? "abaixo da média" : ffmi < 17 ? "na média" : "acima da média") : (ffmi < 17 ? "abaixo da média" : ffmi < 20 ? "na média" : "acima da média"), nivel: "ok", ref: "Massa magra ÷ altura²" }); }
+    if (alt){
+      // faixas de referência do índice de massa magra (FFMI) para adultos
+      const ffmi = mm / Math.pow(alt / 100, 2), lim = p.sexo === "F" ? [14, 17, 19] : [18, 20, 22];
+      const txt = ffmi < lim[0] ? "abaixo da média" : ffmi < lim[1] ? "na média" : ffmi < lim[2] ? "acima da média" : "bem acima da média";
+      d.ffmi = ffmi;
+      d.itens.push({ k: "Índice de massa magra", v: ffmi, fmt: 1, txt, nivel: ffmi < lim[0] ? "atencao" : "ok", ref: `Média para ${p.sexo === "F" ? "mulheres" : "homens"}: ${lim[0]} a ${lim[1]}` });
+    }
   }
   const mMusc = ultimaCom("musculo");
   if (mMusc) d.itens.push({ k: "Músculo esquelético", v: num(mMusc.musculo), fmt: 1, un: "kg", txt: "da balança de bioimpedância" });
