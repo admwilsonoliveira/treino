@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Treino: guia do app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: guia de uma coluna em blocos, com um "celular" desenhado em CSS no topo; cores e fontes iguais às do app */
+:root{
+  --bg:#eef2f4; --surface:#ffffff; --surface-2:#e4eaed; --ink:#14232b; --ink-2:#51646d; --line:#d2dbdf;
+  --strength:#0f6b63; --strength-ink:#ffffff; --strength-soft:#d5ebe7;
+  --walk:#a8700a; --walk-ink:#ffffff; --walk-soft:#f5e8c9;
+  --danger:#b3261e; --danger-soft:#fbe3e0;
+  --phone:#14232b;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d171b; --surface:#15232a; --surface-2:#1d2f37; --ink:#e5eef0; --ink-2:#9bb0b7; --line:#29404a;
+    --strength:#45b6a8; --strength-ink:#06201d; --strength-soft:#163a36;
+    --walk:#e6b142; --walk-ink:#271a02; --walk-soft:#3a2e15;
+    --danger:#ff8f86; --danger-soft:#3d1c1a; --phone:#05090b; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d171b; --surface:#15232a; --surface-2:#1d2f37; --ink:#e5eef0; --ink-2:#9bb0b7; --line:#29404a;
+  --strength:#45b6a8; --strength-ink:#06201d; --strength-soft:#163a36;
+  --walk:#e6b142; --walk-ink:#271a02; --walk-soft:#3a2e15;
+  --danger:#ff8f86; --danger-soft:#3d1c1a; --phone:#05090b; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding-inline:20px;padding-block:28px 56px}
+h1,h2,h3{font-family:var(--display);line-height:1.05;margin:0;text-wrap:balance}
+p{margin:0}
+a{color:var(--strength)}
+:focus-visible{outline:3px solid var(--strength);outline-offset:3px;border-radius:6px}
+
+/* topo */
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:40px;align-items:center;padding-block:12px 36px}
+.eyebrow{font-family:var(--display);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:15px;color:var(--strength)}
+.hero h1{font-size:clamp(56px,11vw,104px);font-weight:700;letter-spacing:-.01em;margin-top:6px}
+.hero h1 span{color:var(--strength)}
+.lede{font-size:20px;color:var(--ink-2);margin-top:14px;max-width:34ch}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 20px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px;border:0;cursor:pointer;font-family:var(--body)}
+.btn.primary{background:var(--strength);color:var(--strength-ink)}
+.btn.ghost{background:var(--surface-2);color:var(--ink)}
+
+/* celular desenhado */
+.phone{justify-self:center;width:min(290px,100%);background:var(--phone);border-radius:34px;padding:12px;box-shadow:0 18px 40px rgba(10,30,35,.22)}
+.screen{background:var(--bg);border-radius:24px;padding:16px 14px 0;overflow:hidden;display:flex;flex-direction:column;gap:10px;min-height:470px}
+.screen .hello{font-family:var(--display);font-weight:700;font-size:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.today{display:flex;gap:12px;align-items:center}
+.big{font-family:var(--display);font-weight:700;font-size:64px;line-height:.8;color:var(--strength)}
+.today b{font-family:var(--display);font-size:18px;display:block}
+.today small{color:var(--ink-2);font-size:13px}
+.week{font-size:12px;margin-top:8px;color:var(--ink)}
+.week strong{font-weight:600}
+.tag{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--walk-soft);color:var(--ink);margin-top:8px}
+.ex h4{font-family:var(--display);font-size:17px;margin:0}
+.ex .rx{font-size:12px;color:var(--ink-2)}
+.sug{font-size:12px;margin-top:6px;border-left:3px solid var(--strength);padding-left:7px}
+.sets{display:grid;grid-template-columns:44px 1fr 1fr 34px;gap:5px;margin-top:8px;font-size:12px;align-items:center}
+.sets i{font-style:normal;color:var(--ink-2)}
+.sets span{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-variant-numeric:tabular-nums}
+.sets em{font-style:normal;text-align:center;border-radius:6px;border:2px solid var(--line);padding:3px 0;color:var(--ink-2);font-weight:700}
+.sets em.on{background:var(--strength);border-color:var(--strength);color:var(--strength-ink)}
+.rest{margin-top:auto;margin-inline:-14px;background:var(--ink);color:var(--bg);display:flex;align-items:center;gap:10px;padding:10px 14px}
+.rest b{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
+.rest .bar{flex:1;height:5px;border-radius:3px;background:rgba(127,127,127,.4);overflow:hidden}
+.rest .bar i{display:block;height:100%;width:62%;background:var(--strength)}
+.rest small{border:1px solid currentColor;border-radius:6px;padding:2px 6px;font-size:11px}
+
+/* seções */
+section{padding-block:34px;border-top:1px solid var(--line)}
+section > h2{font-size:clamp(32px,5vw,44px);font-weight:700}
+.intro{color:var(--ink-2);margin-top:8px;max-width:62ch}
+
+/* passos */
+.steps{list-style:none;padding:0;margin:22px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;counter-reset:passo}
+.steps li{counter-increment:passo;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(passo);font-family:var(--display);font-weight:700;font-size:40px;line-height:1;color:var(--strength)}
+.steps b{font-family:var(--display);font-size:21px;font-weight:600}
+.steps p{font-size:15px;color:var(--ink-2)}
+
+/* abas */
+.tabs{display:grid;gap:12px;margin-top:22px}
+.tabrow{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+.tabname{display:flex;flex-direction:column;gap:6px;color:var(--strength)}
+.tabname.walk{color:var(--walk)}
+.tabname svg{width:28px;height:28px}
+.tabname b{font-family:var(--display);font-size:26px;font-weight:700;color:var(--ink)}
+.tabrow ul{margin:0;padding-left:18px;display:grid;gap:5px}
+.tabrow li{min-width:0}
+
+/* destaques */
+.feats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
+.feat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.feat h3{font-size:23px;font-weight:600}
+.feat p{font-size:15px;color:var(--ink-2)}
+.feat .num{font-family:var(--display);font-weight:700;font-size:30px;color:var(--strength);font-variant-numeric:tabular-nums}
+.feat.walk .num{color:var(--walk)}
+.feat.safe{background:var(--strength-soft);border-color:transparent}
+
+/* instalar */
+.install{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.box h3{font-size:25px;font-weight:700}
+.box ol{margin:0;padding-left:20px;display:grid;gap:5px;font-size:15px}
+.link{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 12px;min-width:0}
+.link code{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px;font-family:ui-monospace,Consolas,monospace}
+.copy{border:0;background:var(--strength);color:var(--strength-ink);border-radius:8px;padding:8px 12px;font-weight:600;cursor:pointer;font-family:var(--body);white-space:nowrap}
+.note{font-size:14px;color:var(--ink-2)}
+
+/* dúvidas */
+.faq{display:grid;gap:10px;margin-top:22px}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 16px}
+.faq summary{cursor:pointer;font-weight:600;padding:12px 0;list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";float:right;font-family:var(--display);font-size:22px;line-height:1;color:var(--strength)}
+.faq details[open] summary::after{content:"−"}
+.faq details p{padding-bottom:14px;color:var(--ink-2);font-size:15px}
+
+footer{border-top:1px solid var(--line);padding-top:22px;font-size:14px;color:var(--ink-2)}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr;gap:28px}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .feats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .install{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  body{font-size:16px}
+  .wrap{padding-inline:16px}
+  .steps,.feats{grid-template-columns:1fr}
+  .tabrow{grid-template-columns:1fr;gap:10px}
+  .tabname{flex-direction:row;align-items:center}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Musculação · caminhada · evolução</div>
+      <h1>Treino<span>.</span></h1>
+      <p class="lede">Seu treino no celular: registra séries e cargas, avisa a hora de subir o peso, grava a caminhada com GPS e mostra sua evolução.</p>
+      <div class="cta">
+        <a class="btn primary" href="#instalar">Instalar o app</a>
+        <a class="btn ghost" href="#abas">Ver o que ele faz</a>
+      </div>
+    </div>
+
+    <div class="phone" role="img" aria-label="Tela do app com o treino A, sugestão de carga e cronômetro de descanso">
+      <div class="screen">
+        <div class="hello">Bom dia, Ana</div>
+        <div class="card">
+          <div class="today"><div class="big">A</div><div><b>Segunda: treino A</b><small>Quadríceps, empurrar e puxada</small></div></div>
+          <div class="week"><strong>Semana 3 de 12 · Acúmulo 1</strong> · RIR 2 → 1</div>
+          <span class="tag">Caminhada 5 km às 18:00</span>
+        </div>
+        <div class="card ex">
+          <h4>Leg press 45°</h4>
+          <div class="rx">3 × 8–12 · Última vez: 100 kg × 12, 12, 12</div>
+          <div class="sug">Todas as séries chegaram a 12. Suba para 102,5 kg (+2,5%).</div>
+          <div class="sets">
+            <i>Série 1</i><span>102,5</span><span>9</span><em class="on">✓</em>
+            <i>Série 2</i><span>102,5</span><span>8</span><em>✓</em>
+          </div>
+        </div>
+        <div class="rest"><b>1:00</b><span class="bar"><i></i></span><small>+30 s</small></div>
+      </div>
+    </div>
+  </header>
+
+  <section id="comecar">
+    <h2>Para começar</h2>
+    <p class="intro">Leva uns cinco minutos. Depois disso, é só abrir o app na hora do treino.</p>
+    <ol class="steps">
+      <li><b>Instale</b><p>Android pelo arquivo do app; iPhone pelo Safari. Os links estão no fim desta página.</p></li>
+      <li><b>Monte seu perfil</b><p>Nome, idade, altura, peso, meta e lesões. A bioimpedância é opcional.</p></li>
+      <li><b>Escolha o plano</b><p>ABC, ABCD ou ABCDE prontos, montado do zero ou enviado por planilha.</p></li>
+      <li><b>Entre com Google</b><p>No Perfil. Ativa o backup automático no seu Google Drive.</p></li>
+    </ol>
+  </section>
+
+  <section id="abas">
+    <h2>O que tem em cada aba</h2>
+    <p class="intro">O app tem cinco abas na parte de baixo da tela.</p>
+    <div class="tabs">
+      <div class="tabrow">
+        <div class="tabname"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><b>Hoje</b></div>
+        <ul><li>O treino do dia e a caminhada planejada.</li><li>A semana do programa de 12 semanas.</li><li>Resumo da semana: treinos, caminhadas e km no mês.</li><li>Aviso quando sai uma versão nova do app.</li></ul>
+      </div>
+      <div class="tabrow">
+        <div class="tabname"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12"/></svg><b>Treinos</b></div>
+        <ul><li>Check-in rápido (dor e energia), séries com carga e repetições, ✓ que dispara o descanso.</li><li>Sugestão de carga e botão <strong>Repetir</strong> para copiar a última sessão.</li><li>Vídeo de execução em cada exercício.</li><li>Editor do plano com banco de exercícios e o equilíbrio por grupo muscular.</li></ul>
+      </div>
+      <div class="tabrow">
+        <div class="tabname walk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="2"/><path d="M10 22l2-7-3-3 1-5 4 3 3 1M9 12l-2 3-3 1"/></svg><b>Caminhada</b></div>
+        <ul><li>GPS grava o percurso, a distância, o ritmo e a velocidade média.</li><li>Mapa do trajeto e o tempo de cada quilômetro.</li><li>Histórico com horário, km, km/h e calorias.</li></ul>
+      </div>
+      <div class="tabrow">
+        <div class="tabname"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18M5 16l4-5 4 3 6-8"/></svg><b>Evolução</b></div>
+        <ul><li>Gráficos de carga por exercício, peso, bioimpedância, calorias e dor.</li><li>Todos os registros, com opção de editar ou apagar.</li><li>Relatório por período com exportação em PDF e Excel.</li></ul>
+      </div>
+      <div class="tabrow">
+        <div class="tabname"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><b>Perfil</b></div>
+        <ul><li>Avaliação física: IMC, gordura, massa magra, gasto calórico e previsão da meta, com a explicação de cada item.</li><li>Pesagens e bioimpedância.</li><li>Lembretes, alarmes, backup no Google Drive e em arquivo.</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="destaques">
+    <h2>Os destaques</h2>
+    <div class="feats">
+      <div class="feat"><div class="num">+5%</div><h3>Sugestão de carga</h3><p>Quando todas as séries chegam ao topo da faixa (por exemplo, 12 em "8–12"), o app sugere o próximo peso. Nunca mais que 5% de uma vez.</p></div>
+      <div class="feat"><div class="num">12 sem.</div><h3>Programa com deload</h3><p>Adaptação, acúmulo e semanas leves nas semanas 7 e 12. O número de séries se ajusta sozinho.</p></div>
+      <div class="feat"><div class="num">1:00</div><h3>Descanso na tela travada</h3><p>O cronômetro aparece na tela de bloqueio e o alarme toca no fim, com o celular no bolso. Toque em +30 s quando precisar.</p></div>
+      <div class="feat walk"><div class="num">km/h</div><h3>Caminhada com GPS</h3><p>Distância, ritmo, velocidade média e mapa, mesmo com a tela desligada no app Android.</p></div>
+      <div class="feat"><div class="num">PDF</div><h3>Relatórios</h3><p>Escolha 30 dias, 90 dias ou 12 meses e exporte em PDF ou Excel para mostrar ao seu professor ou nutricionista.</p></div>
+      <div class="feat safe"><div class="num">0–10</div><h3>Cuidado com a dor</h3><p>Check-in e check-out registram a dor. Se ela passar de 4 ou houver sinal de alerta, o app não sugere aumento de carga e orienta procurar avaliação.</p></div>
+    </div>
+  </section>
+
+  <section id="instalar">
+    <h2>Instalar</h2>
+    <div class="install">
+      <div class="box">
+        <h3>Android</h3>
+        <div class="link"><code id="lk-apk">https://github.com/admwilsonoliveira/treino/releases/latest/download/treino.apk</code><button class="copy" type="button" data-copy="lk-apk">Copiar</button></div>
+        <ol>
+          <li>Abra o link no Chrome do celular.</li>
+          <li>Se aparecer "não é permitido instalar desta fonte", toque em Configurações e ative <strong>Permitir desta fonte</strong>.</li>
+          <li>Toque em <strong>Instalar</strong>. Se o Play Protect avisar, toque em Mais detalhes → Instalar mesmo assim.</li>
+          <li>Na primeira vez, permita notificações e localização.</li>
+        </ol>
+        <p class="note">Samsung e Xiaomi: em Configurações → Aplicativos → Treino → Bateria, escolha <strong>Sem restrições</strong> para o alarme e o GPS não pararem.</p>
+      </div>
+      <div class="box">
+        <h3>iPhone</h3>
+        <div class="link"><code id="lk-web">https://admwilsonoliveira.github.io/treino/</code><button class="copy" type="button" data-copy="lk-web">Copiar</button></div>
+        <ol>
+          <li>Abra o link no <strong>Safari</strong>.</li>
+          <li>Toque em Compartilhar → <strong>Adicionar à Tela de Início</strong>.</li>
+          <li>Abra o app pelo ícone novo.</li>
+        </ol>
+        <p class="note">No iPhone funciona tudo, exceto o alarme com a tela travada e o GPS com a tela desligada.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="duvidas">
+    <h2>Dúvidas comuns</h2>
+    <div class="faq">
+      <details><summary>Alguém vê os meus dados?</summary><p>Não. Os dados ficam no seu celular. Com o backup ativado, uma cópia vai para uma pasta oculta do <strong>seu</strong> Google Drive, que só o app enxerga. Nem quem criou o app tem acesso.</p></details>
+      <details><summary>Funciona sem internet?</summary><p>Sim. Treinos, caminhadas e gráficos funcionam offline. A internet só é usada para o backup no Drive, o mapa de fundo da caminhada e os vídeos.</p></details>
+      <details><summary>Apareceu "O Google não verificou este app".</summary><p>É normal num app pessoal. Toque em Avançado → Acessar Treino → Continuar. O app só pede acesso à própria pasta oculta do Drive.</p></details>
+      <details><summary>Troquei de celular. Como recupero tudo?</summary><p>Instale o app e, no primeiro acesso, toque em "Entrar com Google e recuperar". Os dados voltam do seu Drive.</p></details>
+      <details><summary>O alarme do descanso não tocou.</summary><p>Confira em Perfil → Lembretes e alarmes se as notificações e os alarmes estão permitidos e use "Testar alarme". Em Samsung e Xiaomi, libere o app na economia de bateria.</p></details>
+      <details><summary>Esqueci de finalizar o treino.</summary><p>Depois de 3 horas sem atividade, o app encerra o treino sozinho e o salva como incompleto, com as séries registradas. Você pode corrigir horários em Evolução → Registros → Editar.</p></details>
+    </div>
+  </section>
+
+  <footer>
+    O app Treino é uma ferramenta de registro. Calorias, avaliação física e sugestões de carga são estimativas e não substituem a orientação de médico, fisioterapeuta, nutricionista ou educador físico.
+  </footer>
+</div>
+
+<script>
+document.querySelectorAll("[data-copy]").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var el = document.getElementById(btn.getAttribute("data-copy"));
+    var texto = el.textContent.trim();
+    var ok = function () { btn.textContent = "Copiado"; setTimeout(function () { btn.textContent = "Copiar"; }, 1800); };
+    var selecionar = function () { var r = document.createRange(); r.selectNodeContents(el); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Selecionado"; };
+    try { navigator.clipboard.writeText(texto).then(ok, selecionar); } catch (e) { selecionar(); }
+  });
+});
+</script>
+
+</body>
+</html>
