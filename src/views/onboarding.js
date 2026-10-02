@@ -12,6 +12,7 @@ export const onboarding = {
   html(){
     if (step === 1) return steps(1) + `<h2 style="margin-top:4px">Vamos montar seu perfil</h2>
       <p class="small muted">Essas informações ajudam o app a calcular sua evolução e a sugerir exercícios seguros. Ficam guardadas só neste celular.</p>
+      <div class="panel" style="margin-bottom:12px"><p class="small" style="margin:0 0 10px"><strong>Já usou o app em outro celular?</strong> Entre com Google para recuperar seus dados.</p><button class="btn ghost block" data-act="cloudSignIn" data-onboarding="1">Entrar com Google e recuperar</button></div>
       <div class="panel">${profileFormHtml(S.profile || {}, true)}</div>
       <div class="row" style="margin-top:16px"><button class="btn strength" data-act="obNext1">Continuar</button></div>`;
     if (step === 2) return steps(2) + `<h2 style="margin-top:4px">Bioimpedância (opcional)</h2>
@@ -27,11 +28,13 @@ export function startOnboarding(){
   step = S.profile ? 3 : 1;
   formState.profile = {};
   ui.afterPlanCreated = finish;
+  // restaurou do Drive no primeiro acesso: os dados já têm perfil e plano
+  ui.afterRestore = () => { ui.afterRestore = null; finish(); };
   setOnboarding(onboarding);
   render();
 }
 function finish(){
-  ui.afterPlanCreated = null;
+  ui.afterPlanCreated = null; ui.afterRestore = null;
   setOnboarding(null);
   requestPersist();
   go("hoje");

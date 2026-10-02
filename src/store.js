@@ -17,6 +17,8 @@ export const DEFAULT_SETTINGS = { id: "settings", activePlanId: null, restPadrao
   lembretes: { treino: { ativo: false, hora: "" }, caminhada: { ativo: false, antes: 15 } } };
 // Funções chamadas quando plano ou configurações mudam (ex.: reagendar lembretes no app Android)
 export const dataHooks = [];
+// Funções chamadas a cada alteração gravada (ex.: backup automático no Google Drive)
+export const changeHooks = [];
 export const INATIVO_MS = 3 * 3600 * 1000; // treino sem atividade por 3 h é encerrado como incompleto
 
 // Descanso do exercício: o ajustado pelo usuário ou o padrão das configurações
@@ -103,7 +105,8 @@ export function save(store, id, delay = 600){
   clearTimeout(timers[k]); setStatus("Salvando…");
   timers[k] = setTimeout(() => flush(store, id), delay);
 }
-export function flush(store, id){
+// quiet = true: grava sem disparar os avisos de alteração (usado pelo próprio backup, para não entrar em ciclo)
+export function flush(store, id, quiet = false){
   const k = store + ":" + id;
   clearTimeout(timers[k]); delete timers[k];
   const run = async () => {
@@ -111,7 +114,10 @@ export function flush(store, id){
     try{
       if (o) await db.put(store, o); else await db.del(store, id);
       setStatus("Salvo");
-      if (store === "plans" || (store === "kv" && id === "settings")) dataHooks.forEach(f => { try{ f(); }catch(e){} });
+      if (!quiet){
+        if (store === "plans" || (store === "kv" && id === "settings")) dataHooks.forEach(f => { try{ f(); }catch(e){} });
+        changeHooks.forEach(f => { try{ f(store, id); }catch(e){} });
+      }
     }catch(e){
       setStatus(e && e.name === "QuotaExceededError" ? "Espaço cheio no aparelho" : "Não foi possível salvar. Tente de novo.");
     }

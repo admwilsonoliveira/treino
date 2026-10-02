@@ -18,6 +18,8 @@ import { startOnboarding } from "./views/onboarding.js";
 import { initUpdates, checkForUpdate, tryApplyUpdate } from "./update.js";
 import { isNative, initNative, onBackButton, openExternal } from "./native.js";
 import { scheduleAll } from "./reminders.js";
+import { checkRemoteNewer, backupIfDirty } from "./cloud.js";
+import "./views/nuvem.js";
 
 actions.goTab = el => go(el.dataset.tab);
 
@@ -42,7 +44,7 @@ document.addEventListener("change", ev => {
 });
 document.addEventListener("keydown", ev => { if (ev.key === "Escape" && modalOpen()) closeModal(); });
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") flushPending();
+  if (document.visibilityState === "hidden"){ flushPending(); backupIfDirty(); }
   else {
     if (S.settings && checkStale()) render();
     checkForUpdate(); tryApplyUpdate();
@@ -77,6 +79,7 @@ function back(){
   if (!S.profile || !activePlan() && !Object.keys(S.plans).length) startOnboarding();
   else render();
   scheduleAll();
+  checkRemoteNewer().then(r => { if (r && ui.tab === "hoje") render(); });
   setInterval(() => { if (checkStale()) render(); }, 60 * 1000);
 })();
 

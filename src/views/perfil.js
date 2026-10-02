@@ -5,6 +5,7 @@ import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, ageFrom, newId, restLabel, DIAS_
 import { requestPersist } from "../db.js";
 import { isNative, notifStatus, ensureNotifPermission, openExactAlarmSettings, testNotification } from "../native.js";
 import { APK_URL } from "../update.js";
+import { nuvemPanelHtml } from "./nuvem.js";
 
 export const RESTRICOES = [
   { k: "lombar", t: "Hérnia ou dor lombar" }, { k: "cervical", t: "Hérnia ou dor cervical" },
@@ -215,9 +216,10 @@ views.perfil = {
     h += lembretesHtml();
 
     // backup
+    h += nuvemPanelHtml();
     const ub = S.settings.ultimoBackup;
-    h += `<h2>Backup</h2><div class="panel">
-      <p class="small">Seus dados ficam guardados neste celular. Faça um backup de vez em quando e guarde o arquivo no Google Drive ou no computador. Em breve o app fará isso sozinho no seu Google Drive.</p>
+    h += `<h2>Backup em arquivo</h2><div class="panel">
+      <p class="small">Uma cópia extra num arquivo, para guardar onde quiser ou passar para outro aparelho sem usar a conta Google.</p>
       <p class="small muted">${ub ? "Último backup: " + ddmmyyyy(ub.slice(0, 10)) + "." : "Nenhum backup feito ainda."}</p>
       <div class="row"><button class="btn strength" data-act="backupExport">Fazer backup</button><button class="btn ghost" data-act="backupImport">Restaurar backup</button></div>
       <input type="file" id="backupFile" accept="application/json,.json" hidden>
