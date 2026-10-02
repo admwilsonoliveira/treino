@@ -13,7 +13,10 @@ export const S = {
   exOverrides: {}         // exercícios criados pelo usuário e ajustes nos do banco (ex.: link de vídeo)
 };
 
-export const DEFAULT_SETTINGS = { id: "settings", activePlanId: null, restPadrao: 60, walk: { ativo: true, km: 5, dias: [1, 2, 3, 4, 5], hora: "18:00" } };
+export const DEFAULT_SETTINGS = { id: "settings", activePlanId: null, restPadrao: 60, walk: { ativo: true, km: 5, dias: [1, 2, 3, 4, 5], hora: "18:00" },
+  lembretes: { treino: { ativo: false, hora: "" }, caminhada: { ativo: false, antes: 15 } } };
+// Funções chamadas quando plano ou configurações mudam (ex.: reagendar lembretes no app Android)
+export const dataHooks = [];
 export const INATIVO_MS = 3 * 3600 * 1000; // treino sem atividade por 3 h é encerrado como incompleto
 
 // Descanso do exercício: o ajustado pelo usuário ou o padrão das configurações
@@ -108,6 +111,7 @@ export function flush(store, id){
     try{
       if (o) await db.put(store, o); else await db.del(store, id);
       setStatus("Salvo");
+      if (store === "plans" || (store === "kv" && id === "settings")) dataHooks.forEach(f => { try{ f(); }catch(e){} });
     }catch(e){
       setStatus(e && e.name === "QuotaExceededError" ? "Espaço cheio no aparelho" : "Não foi possível salvar. Tente de novo.");
     }

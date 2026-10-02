@@ -159,7 +159,7 @@ actions.ok = el => {
     const last = lastSetsFor(it.exId, s.id), ph = last && last.sets[i], row = el.parentElement;
     if (x.kg === "" && ph && num(ph.kg) != null && ex.load !== false){ x.kg = String(num(ph.kg)); const ik = row.querySelector('[data-act="kg"]'); if (ik) ik.value = fmtNum(num(ph.kg)); }
     if (x.reps === "" && ph && num(ph.reps) != null){ x.reps = String(num(ph.reps)); const ir = row.querySelector('[data-act="reps"]'); if (ir) ir.value = num(ph.reps); }
-    startRest(restOf(it));
+    startRest(restOf(it), ex.nome);
   }
   el.classList.toggle("on", x.ok); el.setAttribute("aria-pressed", String(x.ok));
   touch(s);

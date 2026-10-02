@@ -3,6 +3,8 @@ import { S, save, flush, setStatus, measurementsList, latestWeight, activePlan, 
 import { ui, views, actions, changes, render, go, openModal, closeModal, modalState } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, ageFrom, newId, restLabel, DIAS_CURTO, downloadBlob, $ } from "../util.js";
 import { requestPersist } from "../db.js";
+import { isNative, notifStatus, ensureNotifPermission, openExactAlarmSettings, testNotification } from "../native.js";
+import { APK_URL } from "../update.js";
 
 export const RESTRICOES = [
   { k: "lombar", t: "Hérnia ou dor lombar" }, { k: "cervical", t: "Hérnia ou dor cervical" },
@@ -210,6 +212,8 @@ views.perfil = {
     const w = S.settings.walk;
     h += `<h2>Caminhada</h2><div class="panel"><div class="between"><div>${w.dias.length ? `${fmtNum(w.km)} km às ${esc(w.hora)}<div class="small muted">${[1, 2, 3, 4, 5, 6, 0].filter(d => w.dias.includes(d)).map(d => DIAS_CURTO[d]).join(", ")}</div>` : "Sem caminhada planejada."}</div><button class="linkbtn" data-act="editWalk">Editar</button></div></div>`;
 
+    h += lembretesHtml();
+
     // backup
     const ub = S.settings.ultimoBackup;
     h += `<h2>Backup</h2><div class="panel">
@@ -219,16 +223,63 @@ views.perfil = {
       <input type="file" id="backupFile" accept="application/json,.json" hidden>
     </div>`;
     h += `<p class="small muted" style="margin-top:18px">Este app é uma ferramenta de registro e não substitui a orientação de médico, fisioterapeuta ou educador físico.</p>
-      <p class="small muted" style="margin-top:6px">Versão ${esc(typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev")}</p>`;
+      <p class="small muted" style="margin-top:6px">Versão ${esc(typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev")}${isNative ? " · app Android" : ""}</p>`;
     return h;
   },
   after(){
+    fillPermStatus();
     const f = $("#backupFile");
     if (f) f.addEventListener("change", () => { if (f.files[0]) onBackupFile(f.files[0]); f.value = ""; });
   }
 };
 changes.restPadrao = el => { S.settings.restPadrao = parseInt(el.value, 10) || 60; flush("kv", "settings"); setStatus("Descanso padrão: " + restLabel(S.settings.restPadrao)); };
 actions.goPlano = () => go("treinos", "plano");
+
+/* ---------- lembretes e alarmes (app Android) ---------- */
+function lembretesHtml(){
+  let h = `<h2>Lembretes e alarmes</h2><div class="panel">`;
+  if (!isNative){
+    return h + `<p class="small">O alarme do descanso com a tela travada e os lembretes de treino e caminhada funcionam no <strong>app Android</strong>.</p>
+      <a class="btn strength block" href="${APK_URL}" target="_blank" rel="noopener">Baixar o app Android</a>
+      <p class="small muted" style="margin:10px 0 0">Antes de trocar, faça um backup aqui e restaure no app Android.</p></div>`;
+  }
+  const L = S.settings.lembretes, w = S.settings.walk;
+  h += `<label class="small" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-act="lemTreino" ${L.treino.ativo ? "checked" : ""} style="width:22px;height:22px;accent-color:var(--strength)"> <span><strong>Lembrete de treino</strong> nos dias do plano</span></label>
+    <div class="field" style="margin-top:8px"><label class="lab small" for="lemTreinoHora">Horário do lembrete</label><input id="lemTreinoHora" class="txt" type="time" data-act="lemTreinoHora" value="${esc(L.treino.hora || "")}"></div>
+    <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:16px"><input type="checkbox" data-act="lemWalk" ${L.caminhada.ativo ? "checked" : ""} style="width:22px;height:22px;accent-color:var(--walk)"> <span><strong>Lembrete de caminhada</strong> (${esc(w.hora)})</span></label>
+    <div class="field" style="margin-top:8px"><label class="lab small" for="lemWalkAntes">Avisar</label><select id="lemWalkAntes" class="txt" data-act="lemWalkAntes">${[0, 10, 15, 30, 60].map(m => `<option value="${m}" ${m === L.caminhada.antes ? "selected" : ""}>${m ? m + " min antes" : "na hora"}</option>`).join("")}</select></div>
+    <div id="permStatus" class="small" style="margin-top:16px">Verificando permissões…</div>
+    <button class="btn ghost block" style="margin-top:12px" data-act="testAlarm">Testar alarme (toca em 10 segundos)</button>
+    <details style="margin-top:12px"><summary class="small" style="font-weight:600;cursor:pointer">Celular Samsung: o alarme não tocou?</summary>
+      <ol class="small" style="padding-left:18px;margin:8px 0 0">
+        <li>Abra <strong>Configurações → Aplicativos → Treino → Bateria</strong> e escolha <strong>Sem restrições</strong>.</li>
+        <li>Em <strong>Configurações → Assistência do aparelho → Bateria → Limites de uso em segundo plano</strong>, confira se o Treino <strong>não</strong> está em "Apps em suspensão".</li>
+        <li>Em <strong>Configurações → Aplicativos → Treino → Notificações</strong>, deixe tudo ativado, inclusive "Fim do descanso".</li>
+      </ol></details></div>`;
+  return h;
+}
+async function fillPermStatus(){
+  const el = $("#permStatus"); if (!el || !isNative) return;
+  const st = await notifStatus();
+  el.innerHTML = `<div>${st.notif ? "✅" : "⚠️"} Notificações ${st.notif ? "permitidas" : "bloqueadas"} ${st.notif ? "" : '<button class="linkbtn" data-act="askNotif">Permitir</button>'}</div>
+    <div>${st.exact ? "✅" : "⚠️"} Alarmes no horário exato ${st.exact ? "permitidos" : "bloqueados"} ${st.exact ? "" : '<button class="linkbtn" data-act="exactSettings">Abrir configuração</button>'}</div>`;
+}
+changes.lemTreino = el => {
+  const L = S.settings.lembretes.treino; L.ativo = el.checked;
+  if (L.ativo && !L.hora){ L.hora = "05:00"; const t = $("#lemTreinoHora"); if (t) t.value = L.hora; }
+  if (L.ativo) ensureNotifPermission().then(fillPermStatus);
+  flush("kv", "settings");
+};
+changes.lemTreinoHora = el => { S.settings.lembretes.treino.hora = el.value; flush("kv", "settings"); };
+changes.lemWalk = el => { S.settings.lembretes.caminhada.ativo = el.checked; if (el.checked) ensureNotifPermission().then(fillPermStatus); flush("kv", "settings"); };
+changes.lemWalkAntes = el => { S.settings.lembretes.caminhada.antes = parseInt(el.value, 10) || 0; flush("kv", "settings"); };
+actions.askNotif = () => ensureNotifPermission().then(fillPermStatus);
+actions.exactSettings = () => openExactAlarmSettings();
+actions.testAlarm = async () => {
+  const ok = await testNotification();
+  setStatus(ok ? "Trave a tela agora: o alarme toca em 10 s" : "Permita as notificações para testar");
+  fillPermStatus();
+};
 actions.goPlanos = () => go("treinos", "planos");
 
 export { requestPersist };

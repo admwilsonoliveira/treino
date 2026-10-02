@@ -1,6 +1,6 @@
 // Aba Hoje: treino do dia, caminhada e resumo da semana.
 import { S, activePlan, planLetters, treinoForDay, active, done } from "../store.js";
-import { views } from "../ui.js";
+import { ui, views } from "../ui.js";
 import { esc, num, fmtNum, ymd, mondayOf, DIAS, DIAS_CURTO } from "../util.js";
 
 views.hoje = {
@@ -9,6 +9,7 @@ views.hoje = {
     const isWalkDay = w.dias.includes(wd);
     const at = active("treino"), aw = active("caminhada");
     let h = "";
+    if (ui.apkUpdate) h += `<div class="panel" style="margin-bottom:12px;border-color:var(--strength)"><strong>Nova versão do app: ${esc(ui.apkUpdate.versao)}</strong><p class="small muted" style="margin:4px 0 10px">Toque para baixar e depois em "Atualizar". Seus dados continuam no celular.</p><a class="btn strength block" href="${esc(ui.apkUpdate.url)}" target="_blank" rel="noopener">Baixar atualização</a></div>`;
     if (at) h += `<div class="panel live"><div class="small muted">Treino ${esc(at.treino)} em andamento</div><div class="elapsed" data-since="${esc(at.start)}">0:00</div><div class="row" style="margin-top:10px"><button class="btn strength" data-act="goTab" data-tab="treinos">Continuar treino</button></div></div>`;
     if (aw) h += `<div class="panel live walkc"><div class="small muted">Caminhada em andamento</div><div class="elapsed" data-since="${esc(aw.start)}">0:00</div><div class="row" style="margin-top:10px"><button class="btn walk" data-act="goTab" data-tab="caminhada">Ver caminhada</button></div></div>`;
 

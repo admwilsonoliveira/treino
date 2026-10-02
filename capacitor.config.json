@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.admwilsonoliveira.treino",
+  "appName": "Treino",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#eef2f4"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_treino",
+      "iconColor": "#0f6b63"
+    }
+  }
+}

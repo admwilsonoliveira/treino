@@ -1,3 +1,4 @@
+import { isNative, saveFileNative } from "./native.js";
 export const $ = s => document.querySelector(s);
 export const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const pad = n => String(n).padStart(2, "0");
@@ -35,6 +36,8 @@ export const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta"
 export const DIAS_CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 export function downloadBlob(filename, data, type){
   const blob = data instanceof Blob ? data : new Blob([data], { type });
+  // no app Android não existe "download": grava o arquivo e abre o menu de compartilhar (Drive, WhatsApp, Arquivos…)
+  if (isNative) return saveFileNative(filename, blob).catch(() => alert("Não foi possível salvar o arquivo."));
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();

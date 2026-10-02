@@ -16,12 +16,15 @@ import "./views/evolucao.js";
 import "./views/perfil.js";
 import { startOnboarding } from "./views/onboarding.js";
 import { initUpdates, checkForUpdate, tryApplyUpdate } from "./update.js";
-
-initUpdates();
+import { isNative, initNative, onBackButton, openExternal } from "./native.js";
+import { scheduleAll } from "./reminders.js";
 
 actions.goTab = el => go(el.dataset.tab);
 
 document.addEventListener("click", ev => {
+  // links externos (YouTube, download): no app Android abrem fora do app
+  const link = ev.target.closest('a[target="_blank"]');
+  if (link && isNative){ ev.preventDefault(); openExternal(link.href); return; }
   const tabBtn = ev.target.closest("nav.tabs button[data-tab]");
   if (tabBtn){ go(tabBtn.dataset.tab); return; }
   if (ev.target.id === "modal"){ closeModal(); return; }
@@ -50,7 +53,20 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("click", () => setTimeout(tryApplyUpdate, 300));
 window.addEventListener("pagehide", () => flushPending());
 
+// Botão voltar do Android: fecha janela, volta da subtela, volta para Hoje e só então minimiza
+function back(){
+  if (modalOpen()){ closeModal(); return true; }
+  if (ui.sub){ go(ui.tab); return true; }
+  if (ui.tab !== "hoje"){ go("hoje"); return true; }
+  return false;
+}
+
 (async function start(){
+  try{
+    await initNative();
+    onBackButton(back);
+  }catch(e){}
+  initUpdates();
   try{
     await loadAll();
   }catch(e){
@@ -60,6 +76,7 @@ window.addEventListener("pagehide", () => flushPending());
   checkStale();
   if (!S.profile || !activePlan() && !Object.keys(S.plans).length) startOnboarding();
   else render();
+  scheduleAll();
   setInterval(() => { if (checkStale()) render(); }, 60 * 1000);
 })();
 

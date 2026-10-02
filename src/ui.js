@@ -1,6 +1,7 @@
 // Infraestrutura da interface: abas, ações, janelas (modal), cronômetros.
 import { $, dur } from "./util.js";
 import { S, active } from "./store.js";
+import { isNative, syncOngoing, restScheduled, restCanceled, notifReady } from "./native.js";
 
 export const ui = { tab: "hoje", sub: null, treino: null, exSel: null, metric: "max", evoView: "cargas" };
 export const views = {};      // aba -> { html(), after?() }
@@ -27,6 +28,7 @@ export function render(){
   }
   tick();
   syncWakeLock();
+  if (isNative) syncOngoing(active("treino"), active("caminhada"));
   greet();
 }
 function greet(){
@@ -69,27 +71,36 @@ export function tick(){
 }
 setInterval(tick, 1000);
 
-const rest = { end: 0, total: 0, iv: null };
-export function startRest(sec){
-  rest.total = sec; rest.end = Date.now() + sec * 1000;
+const rest = { end: 0, total: 0, iv: null, label: "" };
+export function startRest(sec, label = ""){
+  rest.total = sec; rest.end = Date.now() + sec * 1000; rest.label = label;
+  restScheduled(rest.end, label); // app Android: cronômetro na tela de bloqueio + alarme no fim
   $("#rest").style.display = "flex";
   clearInterval(rest.iv); rest.iv = setInterval(restTick, 250); restTick();
 }
-export function stopRest(){ clearInterval(rest.iv); $("#rest").style.display = "none"; }
+export function stopRest(){ clearInterval(rest.iv); $("#rest").style.display = "none"; restCanceled(); }
 function restTick(){
   const left = rest.end - Date.now();
   if (left <= 0){
     $("#restT").textContent = "Vai!"; $("#restBar").style.width = "0%";
     clearInterval(rest.iv);
-    try{ if (navigator.vibrate) navigator.vibrate([200, 100, 200]); }catch(e){}
-    beep();
+    // no app Android o alarme do sistema já toca e vibra; aqui só no navegador
+    if (!(isNative && notifReady())){
+      try{ if (navigator.vibrate) navigator.vibrate([200, 100, 200]); }catch(e){}
+      beep();
+    }
     setTimeout(() => { if (rest.end - Date.now() <= 0) $("#rest").style.display = "none"; }, 4000);
     return;
   }
   $("#restT").textContent = dur(left + 999);
   $("#restBar").style.width = Math.max(0, Math.min(100, left / (rest.total * 1000) * 100)) + "%";
 }
-actions["rest-add"] = () => { rest.end += 30000; rest.total += 30; clearInterval(rest.iv); rest.iv = setInterval(restTick, 250); restTick(); };
+actions["rest-add"] = () => {
+  rest.end = Math.max(rest.end, Date.now()) + 30000; rest.total += 30;
+  $("#rest").style.display = "flex";
+  restScheduled(rest.end, rest.label);
+  clearInterval(rest.iv); rest.iv = setInterval(restTick, 250); restTick();
+};
 actions["rest-stop"] = () => stopRest();
 actions.rest = el => startRest(parseInt(el.dataset.s, 10));
 
@@ -110,6 +121,7 @@ function beep(){
 /* ---------- tela ligada durante treino/caminhada ---------- */
 let wakeLock = null;
 export async function syncWakeLock(){
+  if (isNative) return; // no app Android a tela ligada é controlada em native.js
   const want = !!active("treino") && document.visibilityState === "visible";
   try{
     if (want && !wakeLock && "wakeLock" in navigator){

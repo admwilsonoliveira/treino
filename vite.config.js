@@ -7,7 +7,9 @@ export default defineConfig({
   build: { chunkSizeWarningLimit: 1500 },
   define: {
     // versão exibida no Perfil: versão do package.json + data/hora do build (horário de Brasília)
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version + " · " + new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }))
+    // número da versão do APK (no GitHub Actions); 0 = versão web
+    __APK_BUILD__: JSON.stringify(Number(process.env.APP_VERSION_CODE || 0)),
+    __APP_VERSION__: JSON.stringify((process.env.APP_VERSION_NAME || process.env.npm_package_version) + " · " + new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }))
   },
   plugins: [
     VitePWA({

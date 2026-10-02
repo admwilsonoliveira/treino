@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Treino</string>
+    <string name="title_activity_main">Treino</string>
+    <string name="package_name">io.github.admwilsonoliveira.treino</string>
+    <string name="custom_url_scheme">io.github.admwilsonoliveira.treino</string>
+</resources>
