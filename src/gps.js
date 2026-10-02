@@ -24,6 +24,23 @@ export function distanciaRotaKm(rota){
   let d = 0; for (let i = 1; i < (rota || []).length; i++) d += distanciaM(rota[i - 1], rota[i]);
   return d / 1000;
 }
+// Tempo de cada quilômetro (parciais), interpolando o momento exato em que cada km foi completado.
+// Retorna [{ km: 1, seg: 712 }, ..., { km: 0.98 (trecho final), seg: ... , parcial: true }]
+export function parciais(rota){
+  const out = []; if (!rota || rota.length < 2) return out;
+  let acum = 0, alvo = 1000, tAnterior = rota[0][2];
+  for (let i = 1; i < rota.length; i++){
+    const d = distanciaM(rota[i - 1], rota[i]);
+    while (acum + d >= alvo){
+      const f = d ? (alvo - acum) / d : 0, t = rota[i - 1][2] + f * (rota[i][2] - rota[i - 1][2]);
+      out.push({ km: 1, seg: Math.round(t - tAnterior) }); tAnterior = t; alvo += 1000;
+    }
+    acum += d;
+  }
+  const resto = acum - (alvo - 1000), tFim = rota[rota.length - 1][2];
+  if (resto >= 100) out.push({ km: Math.round(resto / 10) / 100, seg: Math.round(tFim - tAnterior), parcial: true });
+  return out;
+}
 export const onGps = fn => { ouvintes.push(fn); return () => { ouvintes = ouvintes.filter(f => f !== fn); }; };
 const avisar = () => ouvintes.forEach(f => { try{ f(); }catch(e){} });
 

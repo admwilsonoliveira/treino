@@ -3,7 +3,10 @@ import { S, flush, setStatus, active, done, kcalOf, kcalFor, dorLabel } from "..
 import { ui, views, actions, changes, render, go, openModal, closeModal, modalState, scaleHtml, rangeHtml } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, durMin, newId, pace, timeOf, $ } from "../util.js";
 import { endTimeFieldHtml, readEndTime } from "./treinos.js";
-import { iniciarGps, pararGps, gpsEstado, onGps, abrirConfigLocalizacao } from "../gps.js";
+import { iniciarGps, pararGps, gpsEstado, onGps, abrirConfigLocalizacao, parciais } from "../gps.js";
+
+// Velocidade média em km/h a partir do ritmo (min/km)
+const kmh = minPorKm => (minPorKm > 0 ? fmtNum(60 / minPorKm, 1) : "–");
 import { desenharMapa } from "../mapa.js";
 import { isNative } from "../native.js";
 
@@ -27,6 +30,7 @@ function atualizarAoVivo(){
   const km = s.gpsKm || 0, min = (Date.now() - new Date(s.start).getTime()) / 60000;
   const el = $("#gpsKm"); if (el) el.textContent = fmtNum(km, 2);
   const ep = $("#gpsPace"); if (ep) ep.textContent = km >= 0.05 ? pace(min / km) : "–";
+  const ev = $("#gpsVel"); if (ev) ev.textContent = km >= 0.05 ? `Velocidade média: ${kmh(min / km)} km/h` : "";
   const es = $("#gpsStatus"); if (es) es.innerHTML = statusGpsHtml();
   if (mapaVivo && s.rota) mapaVivo.atualizar(s.rota, true);
 }
@@ -45,7 +49,7 @@ views.caminhada = {
           <div class="stat"><div class="v" id="gpsPace">–</div><div class="l">min/km</div></div>
         </div>`;
       if (aw.gps){
-        h += `<div class="small" id="gpsStatus" style="margin-top:10px">${statusGpsHtml()}</div>
+        h += `<div class="small" style="margin-top:8px;font-weight:600" id="gpsVel"></div><div class="small" id="gpsStatus" style="margin-top:4px">${statusGpsHtml()}</div>
           <div id="mapaVivo" style="height:220px;border-radius:12px;margin-top:10px;overflow:hidden;background:var(--surface-2)"></div>
           ${isNative ? "" : `<p class="small muted" style="margin:8px 0 0">No navegador, o GPS só grava com a tela ligada e o app aberto. No app Android ele continua com a tela travada.</p>`}`;
       }
@@ -59,11 +63,11 @@ views.caminhada = {
     h += `<h2>Histórico</h2>`;
     if (!ws.length) h += `<div class="empty">Sua primeira caminhada registrada aparece aqui, com tempo e ritmo.</div>`;
     else {
-      h += `<div class="panel scroll-x"><table><thead><tr><th>Data</th><th>Horário</th><th>Tempo</th><th>Km</th><th>Ritmo</th><th>kcal</th><th>Dor</th><th></th></tr></thead><tbody>`;
+      h += `<div class="panel scroll-x"><table><thead><tr><th>Data</th><th>Horário</th><th>Tempo</th><th>Km</th><th>Ritmo</th><th>km/h</th><th>kcal</th><th>Dor</th><th></th></tr></thead><tbody>`;
       ws.slice(0, 30).forEach(s => {
         const ms = new Date(s.end) - new Date(s.start), km = num(s.km), kc = kcalFor(s);
         const pc = km ? (ms / 60000) / km : null;
-        h += `<tr><td>${ddmm(s.date)}</td><td>${timeOf(s.start)}–${timeOf(s.end)}</td><td>${durMin(ms)} min</td><td>${km ? fmtNum(km, 2) : "–"}</td><td>${pc ? pace(pc) + " /km" : "–"}</td><td>${kc != null ? "~" + kc : "–"}</td><td>${s.pre && s.pre.dor != null ? s.pre.dor : "–"} → ${s.post && s.post.dor != null ? s.post.dor : "–"}</td>
+        h += `<tr><td>${ddmm(s.date)}</td><td>${timeOf(s.start)}–${timeOf(s.end)}</td><td>${durMin(ms)} min</td><td>${km ? fmtNum(km, 2) : "–"}</td><td>${pc ? pace(pc) + " /km" : "–"}</td><td>${pc ? kmh(pc) : "–"}</td><td>${kc != null ? "~" + kc : "–"}</td><td>${s.pre && s.pre.dor != null ? s.pre.dor : "–"} → ${s.post && s.post.dor != null ? s.post.dor : "–"}</td>
           <td>${s.rota && s.rota.length > 1 ? `<button class="linkbtn" data-act="verRota" data-id="${esc(s.id)}">Mapa</button>` : ""}</td></tr>`;
       });
       h += `</tbody></table></div>`;
@@ -135,9 +139,17 @@ actions.verRota = async el => {
   const s = S.sessions[el.dataset.id]; if (!s || !s.rota) return;
   const ms = new Date(s.end) - new Date(s.start), km = num(s.km);
   openModal(`<div class="between"><h3>Caminhada de ${ddmmyyyy(s.date)}</h3><button class="linkbtn" data-act="fecharRota">Fechar</button></div>
-    <p class="small muted" style="margin:4px 0 10px">${timeOf(s.start)} às ${timeOf(s.end)} · ${durMin(ms)} min · ${km ? fmtNum(km, 2) + " km" : ""}${km ? " · " + pace((ms / 60000) / km) + " /km" : ""}</p>
+    <p class="small muted" style="margin:4px 0 10px">${timeOf(s.start)} às ${timeOf(s.end)} · ${durMin(ms)} min · ${km ? fmtNum(km, 2) + " km" : ""}${km ? " · " + pace((ms / 60000) / km) + " /km · " + kmh((ms / 60000) / km) + " km/h" : ""}</p>
     <div id="mapaModal" style="height:340px;border-radius:12px;overflow:hidden;background:var(--surface-2)"></div>
-    <p class="small muted" style="margin:8px 0 0">Ponto verde: início. Ponto vermelho: fim.</p>`);
+    <p class="small muted" style="margin:8px 0 0">Ponto verde: início. Ponto vermelho: fim.</p>
+    ${(() => {
+      const ps = parciais(s.rota); if (!ps.length) return "";
+      const melhor = Math.min(...ps.filter(p => !p.parcial).map(p => p.seg));
+      return `<h3 style="margin-top:14px">Tempo por quilômetro</h3><table style="margin-top:6px"><thead><tr><th>Km</th><th>Tempo</th><th>Ritmo</th><th>km/h</th></tr></thead><tbody>${ps.map((p, i) => {
+        const r = p.seg / 60 / p.km;
+        return `<tr${!p.parcial && p.seg === melhor && ps.length > 2 ? ' style="font-weight:700;color:var(--strength)"' : ""}><td>${p.parcial ? "final (" + fmtNum(p.km, 2) + ")" : i + 1}</td><td>${pace(p.seg / 60)}</td><td>${pace(r)} /km</td><td>${kmh(r)}</td></tr>`;
+      }).join("")}</tbody></table><p class="small muted" style="margin:6px 0 0">Em destaque, o quilômetro mais rápido. Medido pelo GPS: pequenas diferenças são normais.</p>`;
+    })()}`);
   if (mapaModal){ try{ mapaModal.remover(); }catch(e){} }
   mapaModal = await desenharMapa($("#mapaModal"), s.rota);
 };
