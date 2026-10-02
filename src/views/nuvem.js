@@ -18,7 +18,8 @@ export function nuvemPanelHtml(){
   } else {
     const precisaReconectar = cloud.status === "auth" || (!isNative && !sessionActive());
     h += `<p class="small" style="margin:0">Conectado como <strong>${esc(n.email)}</strong></p>
-      <p class="small muted" style="margin:4px 0 12px">${n.ultimoEnvio ? "Último backup: " + quando(n.ultimoEnvio) + "." : "Nenhum backup enviado ainda."}${cloud.status === "erro" ? " A última tentativa falhou; o app tenta de novo na próxima alteração." : ""}</p>`;
+      <p class="small muted" style="margin:4px 0 12px">${n.ultimoEnvio ? "Último backup: " + quando(n.ultimoEnvio) + "." : "Nenhum backup enviado ainda."}</p>`;
+    if (cloud.erro) h += `<div class="warnbox show" style="margin:0 0 12px">${esc(cloud.erro)}</div>`;
     if (precisaReconectar) h += `<div class="infobox" style="margin-bottom:12px">${isNative ? "A conexão com o Google expirou." : "Na versão do navegador, a conexão com o Google dura cerca de 1 hora."} Toque em <strong>Reconectar</strong> para continuar o backup automático.</div>
       <button class="btn strength block" data-act="cloudReconnect">Reconectar</button>`;
     else h += `<div class="row"><button class="btn strength" data-act="cloudBackup">Fazer backup agora</button><button class="btn ghost" data-act="cloudRestore">Restaurar do Drive</button></div>`;

@@ -13,7 +13,7 @@ const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
 
 let SL = null, token = null, tokenExp = 0, dirty = false, timer = null, busy = false;
-export const cloud = { status: "", remote: null }; // remote: { modifiedTime, device, registros } quando há backup mais novo de outro aparelho
+export const cloud = { status: "", erro: "", remote: null }; // remote: { modifiedTime, device, registros } quando há backup mais novo de outro aparelho
 
 /* ---------- identificação deste aparelho (não vai no backup) ---------- */
 function deviceId(){
@@ -75,8 +75,21 @@ async function api(url, opts = {}){
   if (!t) throw Object.assign(new Error("Entre com Google de novo para continuar o backup."), { code: "auth" });
   const r = await fetch(url, Object.assign({}, opts, { headers: Object.assign({ Authorization: "Bearer " + t }, opts.headers || {}) }));
   if (r.status === 401){ token = null; tokenExp = 0; throw Object.assign(new Error("Sessão do Google expirou."), { code: "auth" }); }
-  if (!r.ok) throw new Error("Google Drive respondeu " + r.status);
+  if (!r.ok) throw await driveError(r);
   return r;
+}
+// Traduz o motivo que o Google Drive informa no erro, para o usuário saber o que fazer
+async function driveError(r){
+  let reason = "", msg = "";
+  try{ const j = await r.json(); const e = j.error || {}; msg = e.message || ""; reason = ((e.errors || [])[0] || {}).reason || (e.details || []).map(d => d.reason).filter(Boolean)[0] || e.status || ""; }catch(e){}
+  const all = (reason + " " + msg).toLowerCase();
+  if (/accessnotconfigured|service_disabled|has not been used|is disabled/.test(all))
+    return new Error("A API do Google Drive não está ativada no projeto do Google Cloud. Ative em console.cloud.google.com → APIs → Google Drive API → Ativar.");
+  if (/insufficient|scope|permission/.test(all)){
+    token = null; tokenExp = 0;
+    return Object.assign(new Error("O acesso ao Google Drive não foi autorizado. Toque em \"Sair da conta Google\", entre de novo e marque a permissão do Google Drive."), { code: "auth" });
+  }
+  return new Error(`Google Drive respondeu ${r.status}${reason ? " (" + reason + ")" : ""}${msg ? ": " + msg : ""}`);
 }
 async function findFile(){
   const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
@@ -111,12 +124,13 @@ export async function backupNow(manual = false){
     const res = await uploadFile(f && f.id, data);
     dirty = false; cloud.remote = null;
     await setNuvem({ fileId: res.id, ultimoEnvio: res.modifiedTime || new Date().toISOString() });
-    cloud.status = "";
+    cloud.status = ""; cloud.erro = "";
     if (manual) setStatus("Backup salvo no Google Drive");
     return true;
   }catch(e){
     cloud.status = e.code === "auth" ? "auth" : "erro";
-    if (manual) setStatus(e.message || "Não foi possível fazer o backup");
+    cloud.erro = e.message || "Não foi possível fazer o backup";
+    if (manual) setStatus("Backup não foi feito: veja o motivo no Perfil");
     return false;
   }finally{ busy = false; }
 }
