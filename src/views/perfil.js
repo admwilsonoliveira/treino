@@ -218,7 +218,8 @@ views.perfil = {
       <div class="row"><button class="btn strength" data-act="backupExport">Fazer backup</button><button class="btn ghost" data-act="backupImport">Restaurar backup</button></div>
       <input type="file" id="backupFile" accept="application/json,.json" hidden>
     </div>`;
-    h += `<p class="small muted" style="margin-top:18px">Este app é uma ferramenta de registro e não substitui a orientação de médico, fisioterapeuta ou educador físico.</p>`;
+    h += `<p class="small muted" style="margin-top:18px">Este app é uma ferramenta de registro e não substitui a orientação de médico, fisioterapeuta ou educador físico.</p>
+      <p class="small muted" style="margin-top:6px">Versão ${esc(typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev")}</p>`;
     return h;
   },
   after(){

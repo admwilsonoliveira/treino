@@ -5,9 +5,15 @@ export default defineConfig({
   base: "./",
   server: { port: 5173 },
   build: { chunkSizeWarningLimit: 1500 },
+  define: {
+    // versão exibida no Perfil: versão do package.json + data/hora do build (horário de Brasília)
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version + " · " + new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }))
+  },
   plugins: [
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt": a nova versão espera o app liberar (fora de treino) — ver src/update.js
+      registerType: "prompt",
+      injectRegister: false,
       includeAssets: ["favicon.ico", "apple-touch-icon-180x180.png", "icon.svg"],
       manifest: {
         name: "Treino",

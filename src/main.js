@@ -15,6 +15,9 @@ import "./views/caminhada.js";
 import "./views/evolucao.js";
 import "./views/perfil.js";
 import { startOnboarding } from "./views/onboarding.js";
+import { initUpdates, checkForUpdate, tryApplyUpdate } from "./update.js";
+
+initUpdates();
 
 actions.goTab = el => go(el.dataset.tab);
 
@@ -37,9 +40,14 @@ document.addEventListener("change", ev => {
 document.addEventListener("keydown", ev => { if (ev.key === "Escape" && modalOpen()) closeModal(); });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") flushPending();
-  else if (S.settings && checkStale()) render();
+  else {
+    if (S.settings && checkStale()) render();
+    checkForUpdate(); tryApplyUpdate();
+  }
   syncWakeLock();
 });
+// Ao fechar uma janela ou concluir um registro, aplica a atualização que estiver esperando
+document.addEventListener("click", () => setTimeout(tryApplyUpdate, 300));
 window.addEventListener("pagehide", () => flushPending());
 
 (async function start(){
