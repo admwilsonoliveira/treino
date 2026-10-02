@@ -63,7 +63,16 @@ function back(){
   return false;
 }
 
-(async function start(){
+// Versão web: a janelinha de login do Google volta para o próprio app com o resultado no endereço.
+// Nesse caso só carregamos o plugin, que entrega o resultado à janela principal e fecha esta.
+const oauthReturn = !isNative && /(^|&)(access_token|id_token|error)=/.test(location.hash.slice(1) + "&" + location.search.slice(1));
+if (oauthReturn){
+  $("#app").innerHTML = `<div class="loading">Concluindo o login com Google…</div>`;
+  $("#tabs").hidden = true;
+  import("@capgo/capacitor-social-login").catch(() => {});
+} else start();
+
+async function start(){
   try{
     await initNative();
     onBackButton(back);
@@ -81,7 +90,7 @@ function back(){
   scheduleAll();
   checkRemoteNewer().then(r => { if (r && ui.tab === "hoje") render(); });
   setInterval(() => { if (checkStale()) render(); }, 60 * 1000);
-})();
+}
 
 // Treino esquecido: sem atividade por 3 h, encerra como incompleto e avisa o usuário
 function checkStale(){

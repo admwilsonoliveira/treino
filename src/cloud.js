@@ -34,7 +34,9 @@ async function plugin(){
   if (SL) return SL;
   const m = await import("@capgo/capacitor-social-login");
   SL = m.SocialLogin;
-  await SL.initialize({ google: { webClientId: WEB_CLIENT_ID, mode: "online" } });
+  // na web, o Google devolve o login para este endereço (cadastrado no Google Cloud como "URI de redirecionamento")
+  const redirectUrl = isNative ? undefined : location.origin + location.pathname.replace(/index.html$/, "");
+  await SL.initialize({ google: { webClientId: WEB_CLIENT_ID, mode: "online", redirectUrl } });
   return SL;
 }
 export async function signIn(){
