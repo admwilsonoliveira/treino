@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Treino: Política de Privacidade</title>
+<style>
+  :root{ --bg:#eef2f4; --surface:#fff; --ink:#14232b; --ink-2:#51646d; --line:#d2dbdf; --accent:#0f6b63; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#0d171b; --surface:#15232a; --ink:#e5eef0; --ink-2:#9bb0b7; --line:#29404a; --accent:#45b6a8; } }
+  body{ margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 "Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  main{ max-width:720px; margin:0 auto; padding:24px 16px 48px; }
+  h1{ font-size:28px; margin:0 0 4px; }
+  h2{ font-size:19px; margin:28px 0 8px; }
+  p, li{ color:var(--ink); }
+  .muted{ color:var(--ink-2); font-size:14px; }
+  .box{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-top:16px; }
+  a{ color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Política de Privacidade do app Treino</h1>
+  <p class="muted">Última atualização: 02/10/2026</p>
+
+  <div class="box">
+    <p><strong>Resumo:</strong> seus dados ficam no seu celular. Se você escolher entrar com Google, uma cópia de segurança é guardada no <strong>seu próprio Google Drive</strong>, numa pasta oculta que só o app enxerga. Ninguém mais, nem o criador do app, tem acesso aos seus dados.</p>
+  </div>
+
+  <h2>1. Quais dados o app guarda</h2>
+  <ul>
+    <li>Perfil: nome, data de nascimento, sexo, altura, metas e lesões ou condições de saúde que você informar.</li>
+    <li>Medidas: peso e, se você preencher, dados de bioimpedância e cintura.</li>
+    <li>Treinos e caminhadas: exercícios, cargas, repetições, horários, distância, notas de dor e observações.</li>
+    <li>Preferências: plano de treino, horários de lembretes e configurações do app.</li>
+  </ul>
+
+  <h2>2. Onde os dados ficam</h2>
+  <p>Todos os dados ficam armazenados <strong>no próprio aparelho</strong>. O app não tem servidor próprio e não envia seus dados para o criador do app nem para terceiros.</p>
+
+  <h2>3. Backup no Google Drive (opcional)</h2>
+  <p>Se você tocar em "Entrar com Google", o app pede acesso à permissão <em>drive.appdata</em>, que permite apenas criar e ler os arquivos do próprio app numa pasta oculta do seu Google Drive. Com ela:</p>
+  <ul>
+    <li>o app guarda uma cópia dos seus dados (arquivo <em>treino-backup.json</em>) no <strong>seu</strong> Drive;</li>
+    <li>o app <strong>não</strong> consegue ver, abrir ou alterar nenhum outro arquivo do seu Drive;</li>
+    <li>o app usa seu nome e e-mail do Google apenas para mostrar com qual conta você está conectado.</li>
+  </ul>
+  <p>Você pode parar o backup a qualquer momento em <em>Perfil → Sair da conta Google</em>, e remover o acesso e a cópia em <a href="https://drive.google.com/drive/settings" target="_blank" rel="noopener">Google Drive → Configurações → Gerenciar apps</a> ou em <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">sua Conta Google → Segurança → Apps de terceiros</a>.</p>
+  <p>O uso das informações recebidas das APIs do Google segue a <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de Dados do Usuário dos Serviços de API do Google</a>, incluindo os requisitos de Uso Limitado.</p>
+
+  <h2>4. Notificações e permissões do celular</h2>
+  <p>No app Android, as permissões de notificação e de alarme servem somente para o cronômetro do descanso, o alarme do fim do descanso e os lembretes de treino e caminhada que você configurar.</p>
+
+  <h2>5. Compartilhamento</h2>
+  <p>O app não vende, não compartilha e não transfere seus dados. Arquivos que você exportar (backup ou planilha) só vão para onde você escolher.</p>
+
+  <h2>6. Saúde</h2>
+  <p>O app é uma ferramenta de registro e não substitui a orientação de médico, fisioterapeuta ou educador físico. Os cálculos (calorias, IMC e equilíbrio do treino) são estimativas.</p>
+
+  <h2>7. Como apagar seus dados</h2>
+  <p>Desinstalar o app ou limpar os dados do app apaga as informações do aparelho. A cópia no Google Drive pode ser apagada em Google Drive → Configurações → Gerenciar apps → Treino → Excluir dados ocultos do app.</p>
+
+  <h2>8. Contato</h2>
+  <p>Dúvidas sobre esta política: abra uma mensagem em <a href="https://github.com/admwilsonoliveira/treino/issues" target="_blank" rel="noopener">github.com/admwilsonoliveira/treino/issues</a>.</p>
+
+  <p class="muted" style="margin-top:32px"><a href="./">Abrir o app Treino</a></p>
+</main>
+</body>
+</html>
