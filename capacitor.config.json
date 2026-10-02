@@ -3,7 +3,8 @@
   "appName": "Treino",
   "webDir": "dist",
   "android": {
-    "backgroundColor": "#eef2f4"
+    "backgroundColor": "#eef2f4",
+    "useLegacyBridge": true
   },
   "plugins": {
     "LocalNotifications": {

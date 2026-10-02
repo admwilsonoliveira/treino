@@ -18,6 +18,7 @@ import { startOnboarding } from "./views/onboarding.js";
 import { initUpdates, checkForUpdate, tryApplyUpdate } from "./update.js";
 import { isNative, initNative, onBackButton, openExternal } from "./native.js";
 import { scheduleAll } from "./reminders.js";
+import { retomarGps } from "./gps.js";
 import { checkRemoteNewer, backupIfDirty } from "./cloud.js";
 import "./views/nuvem.js";
 
@@ -88,6 +89,7 @@ async function start(){
   if (!S.profile || !activePlan() && !Object.keys(S.plans).length) startOnboarding();
   else render();
   scheduleAll();
+  retomarGps();
   checkRemoteNewer().then(r => { if (r && ui.tab === "hoje") render(); });
   setInterval(() => { if (checkStale()) render(); }, 60 * 1000);
 }

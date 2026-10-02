@@ -149,6 +149,7 @@ actions.editWalk = () => {
       <div class="field"><label class="lab" for="wk-km">Distância (km)</label><input id="wk-km" class="txt" type="text" inputmode="decimal" value="${esc(fmtNum(w.km))}"></div>
       <div class="field"><label class="lab" for="wk-hora">Horário</label><input id="wk-hora" class="txt" type="time" value="${esc(w.hora)}"></div>
     </div>
+    <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:16px"><input type="checkbox" id="wk-gps" ${w.gps !== false ? "checked" : ""} style="width:22px;height:22px;accent-color:var(--walk)"> Gravar o percurso com GPS (padrão)</label>
     <div class="row" style="margin-top:20px"><button class="btn ghost" data-act="closeModal">Voltar</button><button class="btn walk" data-act="saveWalk">Salvar</button></div>`, { dias: w.dias.slice() });
 };
 actions.walkDia = el => {
@@ -158,7 +159,7 @@ actions.walkDia = el => {
 };
 actions.saveWalk = () => {
   const km = num($("#wk-km").value);
-  S.settings.walk = { ativo: modalState.dias.length > 0, km: km > 0 ? km : 5, dias: modalState.dias.slice().sort(), hora: $("#wk-hora").value || "18:00" };
+  S.settings.walk = Object.assign({}, S.settings.walk, { ativo: modalState.dias.length > 0, km: km > 0 ? km : 5, dias: modalState.dias.slice().sort(), hora: $("#wk-hora").value || "18:00", gps: $("#wk-gps").checked });
   flush("kv", "settings"); closeModal(); render();
 };
 

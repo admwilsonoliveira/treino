@@ -4,4 +4,8 @@
     <string name="title_activity_main">Treino</string>
     <string name="package_name">io.github.admwilsonoliveira.treino</string>
     <string name="custom_url_scheme">io.github.admwilsonoliveira.treino</string>
+    <!-- Notificação do GPS durante a caminhada (plugin background-geolocation) -->
+    <string name="capacitor_background_geolocation_notification_channel_name">GPS da caminhada</string>
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_treino</string>
+    <string name="capacitor_background_geolocation_notification_color">#A8700A</string>
 </resources>

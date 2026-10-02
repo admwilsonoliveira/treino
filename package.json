@@ -10,6 +10,7 @@
     "icons": "pwa-assets-generator --preset minimal-2023 public/icon.svg"
   },
   "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor-community/keep-awake": "^8.0.1",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.2",
@@ -24,6 +25,7 @@
     "chart.js": "^4.5.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
+    "leaflet": "^1.9.4",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {

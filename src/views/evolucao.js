@@ -131,7 +131,7 @@ function registrosHtml(){
       const alert = s.post && s.post.irradiada ? ' <span class="tag alert">dor na perna</span>' : s.post && s.post.dorAguda ? ' <span class="tag alert">dor forte</span>' : "";
       const inc = s.status === "incompleto" ? ' <span class="tag gray">incompleto</span>' : "";
       h += `<li><div><strong>${ddmm(s.date)}</strong> ${s.type === "treino" ? `<span class="tag">Treino ${esc(s.treino)}</span>` : `<span class="tag walk">Caminhada${num(s.km) ? " " + fmtNum(num(s.km)) + " km" : ""}</span>`}${inc}${alert}
-        <div class="small">${timeOf(s.start)} às ${timeOf(s.end)} · ${fmtDur(ms)}${kc != null ? ` · ~${kc} kcal` : ""}</div>${s.post && s.post.obs ? `<div class="small muted">${esc(s.post.obs)}</div>` : ""}</div><div style="display:flex;flex-direction:column;align-items:flex-end"><button class="del" data-act="edOpen" data-id="${esc(s.id)}">Editar</button><button class="del" data-act="del" data-id="${esc(s.id)}">Apagar</button></div></li>`;
+        <div class="small">${timeOf(s.start)} às ${timeOf(s.end)} · ${fmtDur(ms)}${kc != null ? ` · ~${kc} kcal` : ""}</div>${s.post && s.post.obs ? `<div class="small muted">${esc(s.post.obs)}</div>` : ""}</div><div style="display:flex;flex-direction:column;align-items:flex-end">${s.rota && s.rota.length > 1 ? `<button class="del" data-act="verRota" data-id="${esc(s.id)}">Mapa</button>` : ""}<button class="del" data-act="edOpen" data-id="${esc(s.id)}">Editar</button><button class="del" data-act="del" data-id="${esc(s.id)}">Apagar</button></div></li>`;
     });
     h += `</ul>`;
   }

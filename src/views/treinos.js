@@ -90,7 +90,7 @@ function viewAtivo(s){
     const ex = getEx(it.exId), sets = ensureSets(s, it, seriesNaSemana(it, ex, info)), last = lastSetsFor(it.exId, s.id), unit = ex.load === false ? "" : (ex.unit || "kg");
     const sg = sugestao(it, ex, s, info);
     h += `<div class="ex" id="ex-${esc(it.exId)}"><div class="ex-head"><div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div><p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>`;
-    if (last) h += `<div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div>`;
+    if (last) h += `<div class="between" style="align-items:center"><div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div><button class="linkbtn" style="white-space:nowrap;margin-left:8px" data-act="repetir" data-ex="${esc(it.exId)}">↺ Repetir</button></div>`;
     h += sugHtml(sg);
     h += `<div class="set-cols"><span>Série</span><span>${ex.load === false ? "" : "Carga (" + esc(unit) + ")"}</span><span>${ex.tipo === "core" && ex.load === false ? "Reps ou s" : "Repetições"}</span><span></span></div><div class="sets">`;
     sets.forEach((x, i) => {
@@ -201,6 +201,20 @@ actions.ok = el => {
   }
   el.classList.toggle("on", x.ok); el.setAttribute("aria-pressed", String(x.ok));
   touch(s);
+};
+// Copia carga e repetições da última sessão para todas as séries (sem marcar como concluídas)
+actions.repetir = el => {
+  const s = active("treino"); if (!s) return;
+  const it = itemFor(s, el.dataset.ex), last = lastSetsFor(it.exId, s.id); if (!last) return;
+  const sets = ensureSets(s, it), feitas = last.sets.filter(x => num(x.kg) != null || num(x.reps) != null);
+  feitas.forEach((x, i) => {
+    if (!sets[i]) sets.push({ kg: "", reps: "", ok: false });
+    if (sets[i].ok) return; // não mexe em série já concluída
+    sets[i].kg = num(x.kg) != null ? String(num(x.kg)) : sets[i].kg;
+    sets[i].reps = num(x.reps) != null ? String(num(x.reps)) : sets[i].reps;
+  });
+  touch(s); rerenderKeepScroll();
+  setStatus("Cargas da última vez copiadas");
 };
 actions.addSet = el => {
   const s = active("treino"); if (!s) return;
