@@ -4,6 +4,7 @@ import { S, done, list, metricsFor, exercisesWithHistory, activePlan, planLetter
 import { ui, views, actions, changes, render } from "../ui.js";
 import { esc, num, fmtNum, ddmm, ddmmyyyy, durMin, timeOf, ymd, pad, mondayOf, downloadBlob } from "../util.js";
 import { setsSummary } from "./treinos.js";
+import { relatorioHtml } from "./relatorio.js";
 
 Chart.register(LineController, LineElement, PointElement, BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend);
 
@@ -22,11 +23,12 @@ function exOptions(){
 views.evolucao = {
   html(){
     const v = ui.evoView;
-    let h = `<div class="toggle" role="group" aria-label="Visão" style="margin-top:0">${[["cargas", "Cargas"], ["corpo", "Corpo"], ["calorias", "Calorias"], ["dor", "Dor"], ["registros", "Registros"]].map(([k, t]) => `<button type="button" data-act="evoView" data-v="${k}" aria-pressed="${v === k}">${t}</button>`).join("")}</div>`;
+    let h = `<div class="toggle" role="group" aria-label="Visão" style="margin-top:0">${[["cargas", "Cargas"], ["corpo", "Corpo"], ["calorias", "Calorias"], ["dor", "Dor"], ["registros", "Registros"], ["relatorio", "Relatório"]].map(([k, t]) => `<button type="button" data-act="evoView" data-v="${k}" aria-pressed="${v === k}">${t}</button>`).join("")}</div>`;
     if (v === "cargas") h += cargasHtml();
     else if (v === "corpo") h += corpoHtml();
     else if (v === "calorias") h += caloriasHtml();
     else if (v === "dor") h += dorHtml();
+    else if (v === "relatorio") h += relatorioHtml();
     else h += registrosHtml();
     return h;
   },

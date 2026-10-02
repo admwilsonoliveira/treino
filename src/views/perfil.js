@@ -6,6 +6,7 @@ import { requestPersist } from "../db.js";
 import { isNative, notifStatus, ensureNotifPermission, openExactAlarmSettings, testNotification } from "../native.js";
 import { APK_URL } from "../update.js";
 import { nuvemPanelHtml } from "./nuvem.js";
+import { avaliacaoHtml, avaliacaoCardHtml } from "./avaliacao.js";
 
 export const RESTRICOES = [
   { k: "lombar", t: "Hérnia ou dor lombar" }, { k: "cervical", t: "Hérnia ou dor cervical" },
@@ -29,6 +30,10 @@ export function profileFormHtml(p = {}, withWeight = true){
   <div class="grid2">
     <div class="field"><label class="lab" for="pf-meta">Meta de peso (kg)</label><input id="pf-meta" class="txt" type="text" inputmode="decimal" placeholder="Opcional" value="${p.metaPeso != null ? esc(fmtNum(p.metaPeso)) : ""}"></div>
     <div class="field"><label class="lab" for="pf-metadata">Prazo da meta</label><input id="pf-metadata" class="txt" type="date" value="${esc(p.metaData)}"></div>
+  </div>
+  <div class="grid2">
+    <div class="field"><label class="lab" for="pf-metagord">Meta de gordura (%)</label><input id="pf-metagord" class="txt" type="text" inputmode="decimal" placeholder="Opcional" value="${p.metaGordura != null ? esc(fmtNum(p.metaGordura)) : ""}"></div>
+    <div></div>
   </div>
   <div class="field"><span class="lab">Tempo de treino</span>
     <div class="scale" role="group" style="--n:3">${Object.keys(NIVEIS).map(k => `<button type="button" data-act="pfNivel" data-v="${k}" aria-pressed="${p.nivel === k}">${NIVEIS[k].split(" (")[0]}</button>`).join("")}</div></div>
@@ -60,6 +65,7 @@ export function readProfileForm(withWeight = true){
     altura: num($("#pf-alt").value),
     metaPeso: num($("#pf-meta").value),
     metaData: $("#pf-metadata").value || null,
+    metaGordura: num($("#pf-metagord").value),
     nivel: st.nivel || null,
     restricoes: (st.restricoes || []).slice()
   };
@@ -71,6 +77,7 @@ export function readProfileForm(withWeight = true){
   else if (!(p.altura >= 100 && p.altura <= 230)) err = "Informe a altura em centímetros (ex.: 178).";
   else if (withWeight && !(peso >= 30 && peso <= 300)) err = "Informe o peso atual em kg (ex.: 89,5).";
   else if (p.metaPeso != null && !(p.metaPeso >= 30 && p.metaPeso <= 300)) err = "A meta de peso parece inválida.";
+  else if (p.metaGordura != null && !(p.metaGordura >= 5 && p.metaGordura <= 50)) err = "A meta de gordura deve ficar entre 5% e 50%.";
   $("#pf-err").textContent = err;
   return err ? null : { profile: p, peso };
 }
@@ -175,6 +182,7 @@ export async function onBackupFile(file){
 /* ---------- view ---------- */
 views.perfil = {
   html(){
+    if (ui.sub === "avaliacao") return avaliacaoHtml();
     const p = S.profile, idade = ageFrom(p.nascimento), peso = latestWeight();
     const restr = (p.restricoes || []).map(k => (RESTRICOES.find(x => x.k === k) || {}).t).filter(Boolean);
     let h = `<div class="panel"><div class="between"><h3>${esc(p.nome)}</h3><button class="linkbtn" data-act="editPerfil">Editar</button></div>
@@ -188,6 +196,8 @@ views.perfil = {
       ${p.nivel ? " " + esc(NIVEIS[p.nivel].split(" (")[0]) + "." : ""}</p>
       ${restr.length ? `<div class="chips" style="margin-top:8px">${restr.map(t => `<span class="tag alert">${esc(t)}</span>`).join("")}</div>` : ""}
     </div>`;
+
+    h += avaliacaoCardHtml();
 
     // medidas
     const ms = measurementsList().slice().reverse();
@@ -229,6 +239,7 @@ views.perfil = {
     return h;
   },
   after(){
+    if (ui.sub) return;
     fillPermStatus();
     const f = $("#backupFile");
     if (f) f.addEventListener("change", () => { if (f.files[0]) onBackupFile(f.files[0]); f.value = ""; });
