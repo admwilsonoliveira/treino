@@ -21,7 +21,7 @@ jobs:
       APP_VERSION_CODE: ${{ github.run_number }}
       APP_VERSION_NAME: 2.0.${{ github.run_number }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Conferir segredos da chave de assinatura
         env:
@@ -33,7 +33,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -43,7 +43,7 @@ jobs:
           APP_TARGET: android
       - run: npx cap sync android
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -57,7 +57,17 @@ jobs:
           export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/treino.jks"
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          set +e
+          ./gradlew assembleRelease --no-daemon --console=plain > "$RUNNER_TEMP/gradle.log" 2>&1
+          rc=$?
+          set -e
+          tail -n 80 "$RUNNER_TEMP/gradle.log"
+          if [ $rc -ne 0 ]; then
+            # mostra as linhas de erro como anotações (visíveis na página da execução, sem login)
+            grep -nE "error:|e: |What went wrong|Could not|Execution failed|> .*(failed|error)|FAILURE" "$RUNNER_TEMP/gradle.log" | head -n 9 | while IFS= read -r line; do echo "::error::$line"; done
+            grep -A12 "What went wrong" "$RUNNER_TEMP/gradle.log" | tr '\n' ' ' | cut -c1-900 | sed 's/^/::error::/'
+            exit $rc
+          fi
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/treino.apk"
 
       - name: Publicar release
