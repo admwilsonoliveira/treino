@@ -40,7 +40,14 @@ export function remoteBannerHtml(){
 async function afterSignIn(fromOnboarding){
   setStatus("Procurando backup no Drive…");
   let info = null;
-  try{ info = await remoteInfo(); }catch(e){ setStatus(e.message); }
+  try{ info = await remoteInfo(); }
+  catch(e){
+    // erro ao consultar o Drive: mostra o motivo em vez de dizer que não há backup
+    setStatus("");
+    cloud.erro = e.message || "Não foi possível consultar o Google Drive.";
+    openModal(`<h3>Não foi possível consultar o Google Drive</h3><div class="warnbox show" style="margin-top:12px">${esc(cloud.erro)}</div><div class="row" style="margin-top:20px"><button class="btn strength" data-act="closeModal">Entendi</button></div>`);
+    return;
+  }
   setStatus("");
   if (!info){
     if (!fromOnboarding){ await backupNow(true); render(); }
