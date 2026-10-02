@@ -16,7 +16,7 @@ export async function downloadTemplate(){
   LETTERS.filter(L => tpl.treinos[L]).forEach(L => {
     const t = tpl.treinos[L];
     t.ex.forEach((it, i) => {
-      rows.push([L, i === 0 ? t.dias.map(d => DIAS_CURTO[d]).join(", ") : "", i === 0 ? t.foco : "", getEx(it.exId).nome, it.series, it.rx.replace(/^\d+(–\d+)?\s*×\s*/, ""), it.rir, it.rest, "", ""]);
+      rows.push([L, i === 0 ? t.dias.map(d => DIAS_CURTO[d]).join(", ") : "", i === 0 ? t.foco : "", getEx(it.exId).nome, it.series, it.rx.replace(/^\d+(–\d+)?\s*×\s*/, ""), it.rir, it.rest || "", "", ""]);
     });
   });
   const wb = XLSX.utils.book_new();
@@ -29,7 +29,7 @@ export async function downloadTemplate(){
     ["2. Treino: letra A, B, C, D ou E. Use A a C para ABC, A a D para ABCD, A a E para ABCDE."],
     ["3. Dias e Foco: basta preencher na primeira linha de cada treino. Dias: Seg, Ter, Qua, Qui, Sex, Sáb, Dom (separados por vírgula)."],
     ["4. Exercício: use o nome da aba \"Exercícios do app\" para o app reconhecer. Nomes diferentes viram exercícios novos."],
-    ["5. Séries: número (ex.: 3). Repetições: ex.: 8-12. Descanso: em segundos (ex.: 90)."],
+    ["5. Séries: número (ex.: 3). Repetições: ex.: 8-12. Descanso: em segundos (ex.: 90); deixe vazio para usar o padrão do app (60 s)."],
     ["6. Link do vídeo: opcional, link do YouTube."],
     ["7. Salve como .xlsx (ou .csv) e envie pelo app em Treinos > Planos > Enviar planilha."]
   ];
@@ -120,7 +120,8 @@ export function parsePlanRows(rows){
     const series = Math.min(10, Math.max(1, parseInt(get(C.series), 10) || d.series));
     const repsTxt = get(C.reps).replace(/-/g, "–");
     const rx = repsTxt ? (/[×x]/i.test(repsTxt) ? repsTxt.replace(/\s*x\s*/i, " × ") : `${series} × ${repsTxt}`) : `${series} × ${d.rx.split("× ")[1]}`;
-    const item = { exId: ex.id, series, rx, rir: get(C.rir) || d.rir, rest: parseRest(get(C.rest), d.rest) };
+    const item = { exId: ex.id, series, rx, rir: get(C.rir) || d.rir };
+    const rest = parseRest(get(C.rest), null); if (rest) item.rest = rest;
     if (get(C.obs)) item.nota = get(C.obs);
     const video = get(C.video); if (video) item._video = video;
     t.ex.push(item);

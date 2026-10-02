@@ -17,7 +17,8 @@ export const WARMUP_GERAL = [
   { t: "1 a 2 séries leves do primeiro exercício" }
 ];
 
-const T = (exId, series, rx, rir, rest) => ({ exId, series, rx, rir, rest });
+// O descanso fica no padrão das configurações (60 s); o usuário pode ajustar por exercício
+const T = (exId, series, rx, rir) => ({ exId, series, rx, rir });
 
 export const TEMPLATES = [
   {

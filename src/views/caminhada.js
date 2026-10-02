@@ -1,7 +1,7 @@
 // Aba Caminhada: check-in, cronômetro, check-out e histórico.
-import { S, flush, setStatus, active, done } from "../store.js";
+import { S, flush, setStatus, active, done, kcalOf, kcalFor } from "../store.js";
 import { views, actions, render, go, openModal, closeModal, modalState, scaleHtml, rangeHtml } from "../ui.js";
-import { esc, num, fmtNum, ymd, ddmm, durMin, newId, pace, $ } from "../util.js";
+import { esc, num, fmtNum, ymd, ddmm, durMin, newId, pace, timeOf, $ } from "../util.js";
 import { endTimeFieldHtml, readEndTime } from "./treinos.js";
 
 views.caminhada = {
@@ -17,11 +17,11 @@ views.caminhada = {
     h += `<h2>Histórico</h2>`;
     if (!ws.length) h += `<div class="empty">Sua primeira caminhada registrada aparece aqui, com tempo e ritmo.</div>`;
     else {
-      h += `<div class="panel scroll-x"><table><thead><tr><th>Data</th><th>Tempo</th><th>Km</th><th>Ritmo</th><th>Dor</th></tr></thead><tbody>`;
+      h += `<div class="panel scroll-x"><table><thead><tr><th>Data</th><th>Horário</th><th>Tempo</th><th>Km</th><th>Ritmo</th><th>kcal</th><th>Dor</th></tr></thead><tbody>`;
       ws.slice(0, 30).forEach(s => {
-        const ms = new Date(s.end) - new Date(s.start), km = num(s.km);
+        const ms = new Date(s.end) - new Date(s.start), km = num(s.km), kc = kcalFor(s);
         const pc = km ? (ms / 60000) / km : null;
-        h += `<tr><td>${ddmm(s.date)}</td><td>${durMin(ms)} min</td><td>${km ? fmtNum(km) : "–"}</td><td>${pc ? pace(pc) + " /km" : "–"}</td><td>${s.pre && s.pre.dor != null ? s.pre.dor : "–"} → ${s.post && s.post.dor != null ? s.post.dor : "–"}</td></tr>`;
+        h += `<tr><td>${ddmm(s.date)}</td><td>${timeOf(s.start)}–${timeOf(s.end)}</td><td>${durMin(ms)} min</td><td>${km ? fmtNum(km) : "–"}</td><td>${pc ? pace(pc) + " /km" : "–"}</td><td>${kc != null ? "~" + kc : "–"}</td><td>${s.pre && s.pre.dor != null ? s.pre.dor : "–"} → ${s.post && s.post.dor != null ? s.post.dor : "–"}</td></tr>`;
       });
       h += `</tbody></table></div>`;
     }
@@ -59,5 +59,6 @@ actions.confirmFinishWalk = () => {
   if (!(km > 0 && km < 100)){ $("#cw-err").textContent = "Informe a distância em km (ex.: 5 ou 4,8)."; return; }
   s.end = readEndTime(s); s.status = "concluido"; s.km = km;
   s.post = { dor: modalState.dor, obs: $("#obs").value.trim() };
-  closeModal(); flush("sessions", s.id); render(); setStatus("Caminhada concluída e salva");
+  s.kcal = kcalOf(s);
+  closeModal(); flush("sessions", s.id); render(); setStatus("Caminhada concluída" + (s.kcal ? ` · cerca de ${s.kcal} kcal` : ""));
 };

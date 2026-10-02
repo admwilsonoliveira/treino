@@ -1,13 +1,14 @@
 // Aba Evolução: cargas por exercício, corpo (peso e bioimpedância), dor lombar e lista de registros.
-import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend } from "chart.js";
-import { S, done, list, metricsFor, exercisesWithHistory, activePlan, planLetters, getEx, measurementsList, setStatus } from "../store.js";
+import { Chart, LineController, LineElement, PointElement, BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend } from "chart.js";
+import { S, done, list, metricsFor, exercisesWithHistory, activePlan, planLetters, getEx, measurementsList, setStatus, kcalFor, imc, imcClasse } from "../store.js";
 import { ui, views, actions, changes, render } from "../ui.js";
-import { esc, num, fmtNum, ddmm, ddmmyyyy, durMin, timeOf, ymd, downloadBlob } from "../util.js";
+import { esc, num, fmtNum, ddmm, ddmmyyyy, durMin, timeOf, ymd, pad, mondayOf, downloadBlob } from "../util.js";
 import { setsSummary } from "./treinos.js";
 
-Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
+Chart.register(LineController, LineElement, PointElement, BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend);
 
 let charts = [];
+const fmtDur = ms => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + " h " + pad(m % 60) + " min" : m + " min"; };
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 function exOptions(){
@@ -21,9 +22,10 @@ function exOptions(){
 views.evolucao = {
   html(){
     const v = ui.evoView;
-    let h = `<div class="toggle" role="group" aria-label="Visão" style="margin-top:0">${[["cargas", "Cargas"], ["corpo", "Corpo"], ["dor", "Dor lombar"], ["registros", "Registros"]].map(([k, t]) => `<button type="button" data-act="evoView" data-v="${k}" aria-pressed="${v === k}">${t}</button>`).join("")}</div>`;
+    let h = `<div class="toggle" role="group" aria-label="Visão" style="margin-top:0">${[["cargas", "Cargas"], ["corpo", "Corpo"], ["calorias", "Calorias"], ["dor", "Dor"], ["registros", "Registros"]].map(([k, t]) => `<button type="button" data-act="evoView" data-v="${k}" aria-pressed="${v === k}">${t}</button>`).join("")}</div>`;
     if (v === "cargas") h += cargasHtml();
     else if (v === "corpo") h += corpoHtml();
+    else if (v === "calorias") h += caloriasHtml();
     else if (v === "dor") h += dorHtml();
     else h += registrosHtml();
     return h;
@@ -65,7 +67,10 @@ function corpoHtml(){
   let h = `<div class="panel"><div class="between"><h3>Peso</h3><button class="linkbtn" data-act="addMedida">Registrar medida</button></div>`;
   if (!ms.length) return h + `<div class="empty">Registre seu peso na aba Perfil ou pelo botão acima.</div></div>`;
   const first = ms[0], last = ms[ms.length - 1], diff = last.peso - first.peso, meta = S.profile.metaPeso;
-  h += `<div class="stats"><div class="stat"><div class="v">${fmtNum(last.peso)}</div><div class="l">kg atual</div></div><div class="stat"><div class="v">${diff > 0 ? "+" : ""}${fmtNum(diff)}</div><div class="l">kg desde ${ddmm(first.date)}</div></div><div class="stat"><div class="v">${meta ? fmtNum(Math.max(0, last.peso - meta)) : "–"}</div><div class="l">kg até a meta</div></div></div>`;
+  const im = imc(last.peso, S.profile.altura), im0 = imc(first.peso, S.profile.altura);
+  h += `<div class="stats two"><div class="stat"><div class="v">${fmtNum(last.peso)}</div><div class="l">kg atual</div></div><div class="stat"><div class="v">${diff > 0 ? "+" : ""}${fmtNum(diff)}</div><div class="l">kg desde ${ddmm(first.date)}</div></div>
+    <div class="stat"><div class="v">${im ? fmtNum(im) : "–"}</div><div class="l">IMC${im ? ": " + imcClasse(im) : ""}${im && ms.length > 1 ? ` (era ${fmtNum(im0)})` : ""}</div></div><div class="stat"><div class="v">${meta ? fmtNum(Math.max(0, last.peso - meta)) : "–"}</div><div class="l">kg até a meta${meta ? ` (IMC ${fmtNum(imc(meta, S.profile.altura))})` : ""}</div></div></div>
+    <p class="small muted" style="margin:8px 0 0">O IMC não diferencia músculo de gordura. Para quem treina, o % de gordura da bioimpedância e a cintura dizem mais.</p>`;
   h += `<div class="chartbox" style="margin-top:12px"><canvas id="chPeso" role="img" aria-label="Evolução do peso"></canvas></div></div>`;
   const bio = ms.filter(m => m.gorduraPct != null || m.musculo != null || m.massaGorda != null);
   h += `<h2>Bioimpedância</h2><div class="panel">`;
@@ -77,6 +82,30 @@ function corpoHtml(){
     h += `</tbody></table></div>`;
   }
   return h + `</div>`;
+}
+
+/* ---------- calorias ---------- */
+function weeklyKcal(type){
+  const by = {};
+  done().filter(s => s.type === type).forEach(s => { const k = kcalFor(s); if (k == null) return; const w = ymd(mondayOf(new Date(s.date + "T12:00:00"))); by[w] = (by[w] || 0) + k; });
+  // últimas 12 semanas, incluindo semanas sem registro
+  const out = [], mon = mondayOf(new Date());
+  for (let i = 11; i >= 0; i--){ const d = new Date(mon); d.setDate(mon.getDate() - 7 * i); const k = ymd(d); out.push({ week: k, kcal: by[k] || 0 }); }
+  return out;
+}
+function caloriasHtml(){
+  const sum = (type, from) => done().filter(s => s.type === type && s.date >= from).reduce((a, s) => a + (kcalFor(s) || 0), 0);
+  const wk = ymd(mondayOf(new Date())), mo = ymd(new Date()).slice(0, 7) + "-01";
+  let h = `<div class="stats two"><div class="stat"><div class="v">${sum("treino", wk) + sum("caminhada", wk)}</div><div class="l">kcal nesta semana</div></div><div class="stat"><div class="v">${sum("treino", mo) + sum("caminhada", mo)}</div><div class="l">kcal neste mês</div></div></div>`;
+  [["treino", "Musculação", "chKcalT"], ["caminhada", "Caminhada", "chKcalW"]].forEach(([type, title, id]) => {
+    const n = done().filter(s => s.type === type).length;
+    h += `<h2>${title}</h2><div class="panel">`;
+    if (!n) h += `<div class="empty">Conclua ${type === "treino" ? "um treino" : "uma caminhada"} para ver as calorias aqui.</div>`;
+    else h += `<div class="small muted" style="margin-bottom:6px">Total por semana (últimas 12 semanas). Semana: ${sum(type, wk)} kcal · Mês: ${sum(type, mo)} kcal.</div><div class="chartbox" style="height:220px"><canvas id="${id}" role="img" aria-label="Calorias de ${title.toLowerCase()} por semana"></canvas></div>`;
+    h += `</div>`;
+  });
+  h += `<p class="small muted" style="margin-top:14px">Valores estimados pelo tempo de atividade e pelo seu peso. Na musculação, consideramos intensidade moderada; na caminhada, a velocidade média. O gasto real pode variar.</p>`;
+  return h;
 }
 
 function dorHtml(){
@@ -93,9 +122,11 @@ function registrosHtml(){
   else {
     h += `<ul class="hist">`;
     all.slice(0, 60).forEach(s => {
-      const ms = new Date(s.end) - new Date(s.start);
+      const ms = new Date(s.end) - new Date(s.start), kc = kcalFor(s);
       const alert = s.post && s.post.irradiada ? ' <span class="tag alert">dor na perna</span>' : "";
-      h += `<li><div><strong>${ddmm(s.date)}</strong> ${s.type === "treino" ? `<span class="tag">Treino ${esc(s.treino)}</span>` : `<span class="tag walk">Caminhada${num(s.km) ? " " + fmtNum(num(s.km)) + " km" : ""}</span>`}${alert}<div class="small muted">${durMin(ms)} min${s.post && s.post.obs ? ". " + esc(s.post.obs) : ""}</div></div><button class="del" data-act="del" data-id="${esc(s.id)}">Apagar</button></li>`;
+      const inc = s.status === "incompleto" ? ' <span class="tag gray">incompleto</span>' : "";
+      h += `<li><div><strong>${ddmm(s.date)}</strong> ${s.type === "treino" ? `<span class="tag">Treino ${esc(s.treino)}</span>` : `<span class="tag walk">Caminhada${num(s.km) ? " " + fmtNum(num(s.km)) + " km" : ""}</span>`}${inc}${alert}
+        <div class="small">${timeOf(s.start)} às ${timeOf(s.end)} · ${fmtDur(ms)}${kc != null ? ` · ~${kc} kcal` : ""}</div>${s.post && s.post.obs ? `<div class="small muted">${esc(s.post.obs)}</div>` : ""}</div><button class="del" data-act="del" data-id="${esc(s.id)}">Apagar</button></li>`;
     });
     h += `</ul>`;
   }
@@ -125,6 +156,12 @@ function drawCharts(){
     charts.push(new Chart(c2, { type: "line", data: { labels: tr.map(s => ddmm(s.date) + " " + s.treino), datasets: [ds("Antes", tr.map(s => s.pre.dor), wk), ds("Depois", tr.map(s => s.post.dor), dg)] },
       options: Object.assign({}, base, { plugins: legend, scales: { x: base.scales.x, y: { min: 0, max: 10, ticks: { color: ink2, stepSize: 2 }, grid: { color: line } } } }) }));
   }
+  [["chKcalT", "treino", st], ["chKcalW", "caminhada", wk]].forEach(([id, type, color]) => {
+    const el = document.getElementById(id); if (!el) return;
+    const data = weeklyKcal(type);
+    charts.push(new Chart(el, { type: "bar", data: { labels: data.map(x => ddmm(x.week)), datasets: [{ data: data.map(x => x.kcal), backgroundColor: color, borderRadius: 4 }] },
+      options: Object.assign({}, base, { plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => "Semana de " + c[0].label, label: c => "~" + c.parsed.y + " kcal" } } }, scales: { x: base.scales.x, y: { beginAtZero: true, ticks: { color: ink2 }, grid: { color: line } } } }) }));
+  });
   const c3 = document.getElementById("chPeso");
   if (c3){
     const ms = measurementsList(), meta = S.profile.metaPeso;
@@ -147,15 +184,17 @@ function drawCharts(){
 /* ---------- CSV ---------- */
 function csvCell(v){ if (v == null) return ""; let s = typeof v === "number" ? String(Math.round(v * 100) / 100).replace(".", ",") : String(v); if (/[";\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"'; return s; }
 function buildCsv(){
-  const head = ["Data", "Tipo", "Treino", "Exercício", "Série", "Carga (kg)", "Repetições", "Série concluída", "Início", "Fim", "Duração (min)", "Km", "Dor lombar antes", "Dor lombar depois", "Dor na perna", "Energia", "Sono (h)", "Avaliação do treino", "Observação", "Status"];
+  const head = ["Data", "Tipo", "Treino", "Exercício", "Série", "Carga (kg)", "Repetições", "Série concluída", "Início", "Fim", "Duração (min)", "Km", "Dor lombar antes", "Dor lombar depois", "Dor na perna", "Energia", "Sono (h)", "Avaliação do treino", "Observação", "Status", "kcal (estimativa)"];
   const rows = [head];
   list().forEach(s => {
     const ms = s.end ? new Date(s.end) - new Date(s.start) : null;
     const c = { ini: timeOf(s.start), fim: timeOf(s.end), dur: ms != null ? durMin(ms) : null,
       da: s.pre ? s.pre.dor : null, dd: s.post ? s.post.dor : null, perna: s.post && s.post.irradiada != null ? (s.post.irradiada ? "Sim" : "Não") : "",
-      en: s.pre ? s.pre.energia : null, sono: s.pre ? s.pre.sono : null, av: s.post ? s.post.sens : null, obs: s.post ? s.post.obs : "", st: s.status === "concluido" ? "Concluído" : "Em andamento" };
-    const tail = () => [c.ini, c.fim, c.dur, "", c.da, c.dd, c.perna, c.en, c.sono, c.av, c.obs, c.st];
-    if (s.type === "caminhada"){ rows.push([ddmmyyyy(s.date), "Caminhada", "", "", "", "", "", "", c.ini, c.fim, c.dur, num(s.km), c.da, c.dd, "", c.en, "", "", c.obs, c.st]); return; }
+      en: s.pre ? s.pre.energia : null, sono: s.pre ? s.pre.sono : null, av: s.post ? s.post.sens : null, obs: s.post ? s.post.obs : "", st: s.status === "concluido" ? "Concluído" : s.status === "incompleto" ? "Incompleto" : "Em andamento", kc: s.end ? kcalFor(s) : null };
+    // kcal só na primeira linha do treino, para a soma no Excel não repetir o valor a cada série
+    let first = true;
+    const tail = () => { const r = [c.ini, c.fim, c.dur, "", c.da, c.dd, c.perna, c.en, c.sono, c.av, c.obs, c.st, first ? c.kc : null]; first = false; return r; };
+    if (s.type === "caminhada"){ rows.push([ddmmyyyy(s.date), "Caminhada", "", "", "", "", "", "", c.ini, c.fim, c.dur, num(s.km), c.da, c.dd, "", c.en, "", "", c.obs, c.st, c.kc]); return; }
     let any = false;
     Object.keys(s.sets || {}).forEach(exId => {
       const e = getEx(exId);

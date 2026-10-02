@@ -6,9 +6,9 @@ import "@fontsource/barlow-condensed/600.css";
 import "@fontsource/barlow-condensed/700.css";
 import "./styles.css";
 
-import { S, loadAll, flushPending, activePlan } from "./store.js";
-import { ui, views, actions, inputs, changes, render, go, closeModal, modalOpen, syncWakeLock } from "./ui.js";
-import { $ } from "./util.js";
+import { S, loadAll, flushPending, activePlan, autoCloseStale } from "./store.js";
+import { ui, views, actions, inputs, changes, render, go, openModal, closeModal, modalOpen, syncWakeLock, stopRest } from "./ui.js";
+import { $, esc, ddmm, timeOf } from "./util.js";
 import "./views/hoje.js";
 import "./views/treinos.js";
 import "./views/caminhada.js";
@@ -37,6 +37,7 @@ document.addEventListener("change", ev => {
 document.addEventListener("keydown", ev => { if (ev.key === "Escape" && modalOpen()) closeModal(); });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") flushPending();
+  else if (S.settings && checkStale()) render();
   syncWakeLock();
 });
 window.addEventListener("pagehide", () => flushPending());
@@ -48,6 +49,18 @@ window.addEventListener("pagehide", () => flushPending());
     $("#app").innerHTML = `<div class="panel"><h3>Não foi possível abrir seus dados</h3><p class="small muted" style="margin-top:6px">O navegador bloqueou o armazenamento. Verifique se não está em uma aba anônima.</p></div>`;
     return;
   }
+  checkStale();
   if (!S.profile || !activePlan() && !Object.keys(S.plans).length) startOnboarding();
   else render();
+  setInterval(() => { if (checkStale()) render(); }, 60 * 1000);
 })();
+
+// Treino esquecido: sem atividade por 3 h, encerra como incompleto e avisa o usuário
+function checkStale(){
+  const s = autoCloseStale(); if (!s) return false;
+  stopRest();
+  setTimeout(() => openModal(`<h3>Treino encerrado automaticamente</h3>
+    <p style="margin-top:10px">O treino ${esc(s.treino)} de ${ddmm(s.date)}, iniciado às ${timeOf(s.start)}, ficou mais de 3 horas sem atividade. Ele foi salvo como <strong>incompleto</strong>, terminando às ${timeOf(s.end)}, com as séries que você registrou.</p>
+    <div class="row" style="margin-top:20px"><button class="btn strength" data-act="closeModal">Entendi</button></div>`), 50);
+  return true;
+}

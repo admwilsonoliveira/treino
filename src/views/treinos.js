@@ -1,8 +1,9 @@
 // Aba Treinos: ver o plano, fazer check-in, registrar séries e check-out.
-import { S, save, flush, setStatus, activePlan, planLetters, treinoForDay, active, lastSetsFor, getEx } from "../store.js";
+import { S, save, flush, setStatus, activePlan, planLetters, treinoForDay, active, lastSetsFor, getEx, restOf, kcalOf } from "../store.js";
 import { ui, views, actions, inputs, changes, render, go, rerenderKeepScroll, openModal, closeModal, modalState, scaleHtml, rangeHtml, startRest, stopRest } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, restLabel, yt, newId, timeOf, pad, $ } from "../util.js";
 import { viewPlanos, viewPlanoEditor, templatesHtml, videoUrl, lombarTag } from "./plano.js";
+import { viewResumo, summaryCard } from "./equilibrio.js";
 
 function setsSummary(sets, ex){
   const parts = sets.filter(x => num(x.reps) != null || num(x.kg) != null).map(x => (ex.load === false ? "" : (num(x.kg) != null ? fmtNum(num(x.kg)) + " kg × " : "")) + (num(x.reps) != null ? num(x.reps) : "–"));
@@ -15,11 +16,14 @@ function ensureSets(s, it){
   return s.sets[it.exId];
 }
 const itemFor = (s, exId) => (s.plano.ex || []).find(x => x.exId === exId);
+// Registra a última interação: treino sem atividade por 3 h é encerrado como incompleto
+function touch(s){ s.lastActivity = new Date().toISOString(); save("sessions", s.id); }
 
 views.treinos = {
   html(){
     if (ui.sub === "planos") return viewPlanos();
     if (ui.sub === "plano") return viewPlanoEditor();
+    if (ui.sub === "resumo") return viewResumo();
     const at = active("treino");
     if (at) return viewAtivo(at);
     const p = activePlan();
@@ -34,11 +38,12 @@ views.treinos = {
     h += `<div class="panel" style="margin-top:12px"><h3>Treino ${L}${t.foco ? ": " + esc(t.foco) : ""}</h3>`;
     if (!t.ex.length) h += `<p class="small muted" style="margin:6px 0 12px">Este treino ainda não tem exercícios.</p><button class="btn strength block" data-act="goEditor">Adicionar exercícios</button></div>`;
     else h += `<p class="small muted" style="margin:6px 0 12px">Comece pelo aquecimento. O check-in leva 10 segundos.</p><button class="btn strength block" data-act="startTreino" data-t="${L}">Fazer check-in e iniciar treino ${L}</button></div>`;
+    h += summaryCard(p);
     if (t.ex.length){
       h += `<h2>Exercícios</h2>`;
       t.ex.forEach(it => {
         const ex = getEx(it.exId), last = lastSetsFor(it.exId);
-        h += `<div class="ex"><div class="ex-head"><div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}, descanso ${restLabel(it.rest)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div>
+        h += `<div class="ex"><div class="ex-head"><div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}, descanso ${restLabel(restOf(it))}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div>
           ${lombarTag(ex) ? `<div style="margin-top:6px">${lombarTag(ex)}</div>` : ""}<p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>${last ? `<div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div>` : ""}</div>`;
       });
     }
@@ -72,7 +77,7 @@ function viewAtivo(s){
       h += `<input type="text" inputmode="numeric" id="r-${esc(it.exId)}-${i}" aria-label="Repetições série ${i + 1}" data-act="reps" data-ex="${esc(it.exId)}" data-i="${i}" value="${esc(x.reps)}" placeholder="${ph && num(ph.reps) != null ? num(ph.reps) : ""}">`;
       h += `<button type="button" class="chk ${x.ok ? "on" : ""}" aria-pressed="${!!x.ok}" aria-label="Concluir série ${i + 1}" data-act="ok" data-ex="${esc(it.exId)}" data-i="${i}">✓</button></div>`;
     });
-    h += `</div><div class="row" style="justify-content:space-between"><button class="linkbtn" data-act="addSet" data-ex="${esc(it.exId)}">Adicionar série</button><button class="linkbtn" data-act="rest" data-s="${it.rest}">Descanso ${restLabel(it.rest)}</button></div></div>`;
+    h += `</div><div class="row" style="justify-content:space-between"><button class="linkbtn" data-act="addSet" data-ex="${esc(it.exId)}">Adicionar série</button><button class="linkbtn" data-act="rest" data-s="${restOf(it)}">Descanso ${restLabel(restOf(it))}</button></div></div>`;
   });
   h += `<div class="row" style="margin-top:18px"><button class="btn strength" data-act="finishTreino">Fazer check-out e finalizar</button></div><div class="row" style="margin-top:10px"><button class="btn danger" data-act="cancel" data-id="${esc(s.id)}">Descartar este treino</button></div>`;
   return h;
@@ -139,9 +144,10 @@ actions.confirmFinishTreino = () => {
   if (modalState.irradiada == null){ $("#co-err").textContent = "Responda se sentiu dor descendo para a perna. Essa resposta é importante para a sua segurança."; return; }
   s.end = readEndTime(s); s.status = "concluido";
   s.post = { dor: modalState.dor, irradiada: modalState.irradiada, sens: modalState.sens, obs: $("#obs").value.trim() };
+  s.kcal = kcalOf(s);
   closeModal(); flush("sessions", s.id); stopRest();
   go("hoje");
-  setStatus(s.post.irradiada ? "Treino salvo. Procure avaliação pela dor na perna." : "Treino concluído e salvo");
+  setStatus(s.post.irradiada ? "Treino salvo. Procure avaliação pela dor na perna." : "Treino concluído" + (s.kcal ? ` · cerca de ${s.kcal} kcal` : ""));
 };
 
 /* ---------- séries ---------- */
@@ -153,27 +159,27 @@ actions.ok = el => {
     const last = lastSetsFor(it.exId, s.id), ph = last && last.sets[i], row = el.parentElement;
     if (x.kg === "" && ph && num(ph.kg) != null && ex.load !== false){ x.kg = String(num(ph.kg)); const ik = row.querySelector('[data-act="kg"]'); if (ik) ik.value = fmtNum(num(ph.kg)); }
     if (x.reps === "" && ph && num(ph.reps) != null){ x.reps = String(num(ph.reps)); const ir = row.querySelector('[data-act="reps"]'); if (ir) ir.value = num(ph.reps); }
-    startRest(it.rest);
+    startRest(restOf(it));
   }
   el.classList.toggle("on", x.ok); el.setAttribute("aria-pressed", String(x.ok));
-  save("sessions", s.id);
+  touch(s);
 };
 actions.addSet = el => {
   const s = active("treino"); if (!s) return;
   ensureSets(s, itemFor(s, el.dataset.ex)).push({ kg: "", reps: "", ok: false });
-  save("sessions", s.id); rerenderKeepScroll();
+  touch(s); rerenderKeepScroll();
 };
 function onSetInput(el){
   const s = active("treino"); if (!s) return;
   const sets = ensureSets(s, itemFor(s, el.dataset.ex));
   sets[+el.dataset.i][el.dataset.act] = el.value.trim().replace(",", ".");
-  save("sessions", s.id);
+  touch(s);
 }
 inputs.kg = onSetInput;
 inputs.reps = onSetInput;
 changes.wu = el => {
   const s = active("treino"); if (!s) return;
-  s.warmup = s.warmup || []; s.warmup[+el.dataset.i] = el.checked; save("sessions", s.id);
+  s.warmup = s.warmup || []; s.warmup[+el.dataset.i] = el.checked; touch(s);
 };
 
 /* ---------- descartar / apagar ---------- */

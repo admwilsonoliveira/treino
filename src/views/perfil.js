@@ -1,7 +1,7 @@
 // Aba Perfil: dados do usuário, medidas corporais (peso e bioimpedância), plano ativo, caminhada e backup.
-import { S, save, flush, setStatus, measurementsList, latestWeight, activePlan, exportData, validateBackup, restoreData } from "../store.js";
-import { ui, views, actions, render, go, openModal, closeModal, modalState } from "../ui.js";
-import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, ageFrom, newId, DIAS_CURTO, downloadBlob, $ } from "../util.js";
+import { S, save, flush, setStatus, measurementsList, latestWeight, activePlan, exportData, validateBackup, restoreData, imc, imcClasse, restOf } from "../store.js";
+import { ui, views, actions, changes, render, go, openModal, closeModal, modalState } from "../ui.js";
+import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, ageFrom, newId, restLabel, DIAS_CURTO, downloadBlob, $ } from "../util.js";
 import { requestPersist } from "../db.js";
 
 export const RESTRICOES = [
@@ -180,7 +180,8 @@ views.perfil = {
         <div class="stat"><div class="v">${p.altura ? fmtNum(p.altura / 100, 2) : "–"}</div><div class="l">metros</div></div>
         <div class="stat"><div class="v">${peso != null ? fmtNum(peso) : "–"}</div><div class="l">kg (último)</div></div>
       </div>
-      <p class="small" style="margin:12px 0 0">${p.metaPeso ? `Meta: <strong>${fmtNum(p.metaPeso)} kg</strong>${p.metaData ? " até " + ddmmyyyy(p.metaData) : ""}.` : "Sem meta de peso definida."}
+      ${(() => { const v = imc(peso, p.altura); return v ? `<p style="margin:12px 0 0"><strong>IMC ${fmtNum(v)}</strong> <span class="muted">(${imcClasse(v)})</span></p>` : ""; })()}
+      <p class="small" style="margin:8px 0 0">${p.metaPeso ? `Meta: <strong>${fmtNum(p.metaPeso)} kg</strong>${p.metaData ? " até " + ddmmyyyy(p.metaData) : ""}.` : "Sem meta de peso definida."}
       ${p.nivel ? " " + esc(NIVEIS[p.nivel].split(" (")[0]) + "." : ""}</p>
       ${restr.length ? `<div class="chips" style="margin-top:8px">${restr.map(t => `<span class="tag alert">${esc(t)}</span>`).join("")}</div>` : ""}
     </div>`;
@@ -201,7 +202,9 @@ views.perfil = {
     // plano
     const pl = activePlan();
     h += `<h2>Plano de treino</h2><div class="panel"><div class="between"><div><strong>${pl ? esc(pl.nome) : "Nenhum plano"}</strong><div class="small muted">${pl ? "Divisão " + pl.split : ""}</div></div><button class="linkbtn" data-act="goPlano">Editar</button></div>
-      <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="goPlanos">Trocar plano ou criar novo</button></div></div>`;
+      <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="goPlanos">Trocar plano ou criar novo</button></div>
+      <div class="field"><label class="lab" for="restPadrao">Descanso padrão entre séries</label><select id="restPadrao" class="txt" data-act="restPadrao">${[30, 45, 60, 75, 90, 120, 150, 180].map(s => `<option value="${s}" ${s === restOf(null) ? "selected" : ""}>${restLabel(s)}</option>`).join("")}</select>
+      <div class="help">Vale para todos os exercícios, exceto os que você ajustou um a um. No treino, use "+30 s" quando precisar de mais tempo.</div></div></div>`;
 
     // caminhada
     const w = S.settings.walk;
@@ -223,6 +226,7 @@ views.perfil = {
     if (f) f.addEventListener("change", () => { if (f.files[0]) onBackupFile(f.files[0]); f.value = ""; });
   }
 };
+changes.restPadrao = el => { S.settings.restPadrao = parseInt(el.value, 10) || 60; flush("kv", "settings"); setStatus("Descanso padrão: " + restLabel(S.settings.restPadrao)); };
 actions.goPlano = () => go("treinos", "plano");
 actions.goPlanos = () => go("treinos", "planos");
 

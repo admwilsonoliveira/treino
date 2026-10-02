@@ -1,5 +1,5 @@
 // Planos de treino: lista, modelos prontos, editor (ABC/ABCD/ABCDE) e escolha de exercícios.
-import { S, save, flush, activePlan, planLetters, getEx, allExercises } from "../store.js";
+import { S, save, flush, activePlan, planLetters, getEx, allExercises, restOf } from "../store.js";
 import { ui, actions, inputs, changes, render, go, rerenderKeepScroll, openModal, closeModal, modalState } from "../ui.js";
 import { esc, num, norm, newId, clone, restLabel, yt, isYoutubeUrl, DIAS_CURTO, $ } from "../util.js";
 import { TEMPLATES, LETTERS, SPLITS, emptyTreinos, WARMUP_GERAL } from "../data/templates.js";
@@ -100,7 +100,7 @@ export function viewPlanoEditor(){
   t.ex.forEach((it, i) => {
     const ex = getEx(it.exId);
     h += `<div class="plan-ex"><div class="ord"><button class="iconbtn" data-act="exUp" data-i="${i}" aria-label="Subir" ${i === 0 ? "disabled" : ""}>↑</button><button class="iconbtn" data-act="exDown" data-i="${i}" aria-label="Descer" ${i === t.ex.length - 1 ? "disabled" : ""}>↓</button></div>
-      <div class="body"><div class="nm"><strong>${esc(ex.nome)}</strong></div><div class="small muted">${esc(it.rx)}, ${esc(it.rir)}, descanso ${restLabel(it.rest)}</div>${lombarTag(ex) ? `<div style="margin-top:4px">${lombarTag(ex)}</div>` : ""}
+      <div class="body"><div class="nm"><strong>${esc(ex.nome)}</strong></div><div class="small muted">${esc(it.rx)}, ${esc(it.rir)}, descanso ${restLabel(restOf(it))}</div>${lombarTag(ex) ? `<div style="margin-top:4px">${lombarTag(ex)}</div>` : ""}
       <div class="row" style="gap:14px"><button class="linkbtn" data-act="exEdit" data-i="${i}">Ajustar</button><button class="linkbtn danger" data-act="exRemove" data-i="${i}">Remover</button></div></div></div>`;
   });
   h += `<button class="btn strength block" style="margin-top:12px" data-act="openPicker">Adicionar exercício</button></div>`;
@@ -108,7 +108,7 @@ export function viewPlanoEditor(){
   h += `<h2>Aquecimento</h2><div class="panel"><label class="lab small muted" for="pl-warm">Um item por linha. Vale para todos os treinos deste plano.</label>
     <textarea id="pl-warm" class="txt" rows="6" style="margin-top:6px" data-act="planWarm">${esc((p.warmup || []).map(w => w.t).join("\n"))}</textarea></div>`;
 
-  h += `<div class="row" style="margin-top:18px"><button class="btn ghost" data-act="goPlanosFromEditor">Ver todos os planos</button></div>
+  h += `<div class="row" style="margin-top:18px"><button class="btn strength" data-act="goResumo">Ver equilíbrio do plano</button><button class="btn ghost" data-act="goPlanosFromEditor">Ver todos os planos</button></div>
     <div class="row" style="margin-top:10px"><button class="btn danger" data-act="delPlan">Apagar este plano</button></div>`;
   return h;
 }
@@ -164,7 +164,7 @@ actions.exEdit = el => {
   openModal(`<h3>${esc(ex.nome)}</h3>
     <div class="grid2">
       <div class="field"><label class="lab" for="ee-series">Séries</label><input id="ee-series" class="txt" type="text" inputmode="numeric" value="${esc(it.series)}"></div>
-      <div class="field"><label class="lab" for="ee-rest">Descanso</label><select id="ee-rest" class="txt">${RESTS.concat(RESTS.includes(it.rest) ? [] : [it.rest]).map(s => `<option value="${s}" ${s === it.rest ? "selected" : ""}>${restLabel(s)}</option>`).join("")}</select></div>
+      <div class="field"><label class="lab" for="ee-rest">Descanso</label><select id="ee-rest" class="txt"><option value="0" ${!(it.rest > 0) ? "selected" : ""}>Padrão (${restLabel(restOf(null))})</option>${RESTS.concat(!(it.rest > 0) || RESTS.includes(it.rest) ? [] : [it.rest]).map(s => `<option value="${s}" ${s === it.rest ? "selected" : ""}>${restLabel(s)}</option>`).join("")}</select></div>
     </div>
     <div class="grid2">
       <div class="field"><label class="lab" for="ee-rx">Repetições</label><input id="ee-rx" class="txt" type="text" maxlength="40" value="${esc(it.rx)}"><div class="help">Ex.: 3 × 8–12</div></div>
@@ -181,7 +181,8 @@ actions.exEditSave = el => {
   const series = parseInt($("#ee-series").value, 10), video = $("#ee-video").value.trim();
   if (!(series >= 1 && series <= 10)){ $("#ee-err").textContent = "Séries: de 1 a 10."; return; }
   if (video && !isYoutubeUrl(video)){ $("#ee-err").textContent = "O link precisa ser do YouTube (youtube.com ou youtu.be)."; return; }
-  it.series = series; it.rest = parseInt($("#ee-rest").value, 10);
+  it.series = series;
+  const rest = parseInt($("#ee-rest").value, 10); if (rest > 0) it.rest = rest; else delete it.rest;
   it.rx = $("#ee-rx").value.trim() || it.rx; it.rir = $("#ee-rir").value.trim();
   const nota = $("#ee-nota").value.trim();
   if (nota !== (ex.nota || "")) it.nota = nota; else delete it.nota;

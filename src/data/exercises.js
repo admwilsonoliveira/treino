@@ -95,7 +95,7 @@ export const EXERCISES = [
   E("afundo", "Afundo com halteres", "quadriceps", "halter", "cuidado", "c", "Tronco ereto, passos controlados.", { unit: "kg/mão" }),
   E("agachamento_livre", "Agachamento livre com barra", "quadriceps", "barra", "evitar", "c", "Carga axial alta na coluna. Prefira leg press ou búlgaro."),
   E("agachamento_frontal", "Agachamento frontal com barra", "quadriceps", "barra", "evitar", "c", "Carga axial alta na coluna."),
-  E("adutora", "Cadeira adutora", "quadriceps", "maquina", "seguro", "i", "Costas apoiadas, movimento controlado.", { v: "cadeira adutora execução" }),
+  E("adutora", "Cadeira adutora", "outros", "maquina", "seguro", "i", "Costas apoiadas, movimento controlado.", { v: "cadeira adutora execução" }),
 
   // ---------- Posterior de coxa ----------
   E("mesa_flexora", "Mesa flexora", "posterior", "maquina", "seguro", "i", "Não deixe o quadril subir. Se incomodar a lombar, troque pela cadeira flexora.", { v: "mesa flexora execução correta" }),
@@ -142,7 +142,7 @@ export const EX_BASE_BY_ID = Object.fromEntries(EXERCISES.map(e => [e.id, e]));
 
 // Prescrição padrão sugerida quando o exercício é adicionado a um treino
 export function defaultRx(ex){
-  if (ex.tipo === "core") return { series: 3, rx: "3 × 10–12", rir: "controle", rest: 45 };
-  if (ex.tipo === "i") return { series: 3, rx: "3 × 10–15", rir: "RIR 0–1", rest: 75 };
-  return { series: 3, rx: "3 × 8–12", rir: "RIR 1–2", rest: 120 };
+  if (ex.tipo === "core") return { series: 3, rx: "3 × 10–12", rir: "controle" };
+  if (ex.tipo === "i") return { series: 3, rx: "3 × 10–15", rir: "RIR 0–1" };
+  return { series: 3, rx: "3 × 8–12", rir: "RIR 1–2" };
 }
