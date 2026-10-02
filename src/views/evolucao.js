@@ -1,6 +1,6 @@
 // Aba Evolução: cargas por exercício, corpo (peso e bioimpedância), dor lombar e lista de registros.
 import { Chart, LineController, LineElement, PointElement, BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend } from "chart.js";
-import { S, done, list, metricsFor, exercisesWithHistory, activePlan, planLetters, getEx, measurementsList, setStatus, kcalFor, imc, imcClasse } from "../store.js";
+import { S, done, list, metricsFor, exercisesWithHistory, activePlan, planLetters, getEx, measurementsList, setStatus, kcalFor, imc, imcClasse, hasRestr, dorLabel } from "../store.js";
 import { ui, views, actions, changes, render } from "../ui.js";
 import { esc, num, fmtNum, ddmm, ddmmyyyy, durMin, timeOf, ymd, pad, mondayOf, downloadBlob } from "../util.js";
 import { setsSummary } from "./treinos.js";
@@ -110,9 +110,9 @@ function caloriasHtml(){
 
 function dorHtml(){
   const tr = done().filter(s => s.type === "treino" && s.pre && s.post);
-  let h = `<div class="panel"><h3>Dor lombar nos treinos</h3>`;
+  let h = `<div class="panel"><h3>${dorLabel()} nos treinos</h3>`;
   if (!tr.length) return h + `<div class="empty">Cada check-in e check-out registra sua dor de 0 a 10. Depois do primeiro treino concluído, a tendência aparece aqui.</div></div>`;
-  return h + `<p class="small muted" style="margin:6px 0 8px">Aceitável: até 3/10 e voltando ao normal em 24 h. Dor que desce para a perna é sinal para parar e procurar avaliação.</p><div class="chartbox" style="height:220px"><canvas id="chDor" role="img" aria-label="Dor lombar antes e depois dos treinos"></canvas></div></div>`;
+  return h + `<p class="small muted" style="margin:6px 0 8px">${hasRestr("lombar") ? "Aceitável: até 3/10 e voltando ao normal em 24 h. Dor que desce para a perna é sinal para parar e procurar avaliação." : "Desconforto leve que passa em até 24 h é comum. Dor forte, pontada ou que piora a cada treino é sinal para ajustar o exercício e procurar avaliação."}</p><div class="chartbox" style="height:220px"><canvas id="chDor" role="img" aria-label="${dorLabel()} antes e depois dos treinos"></canvas></div></div>`;
 }
 
 function registrosHtml(){
@@ -123,7 +123,7 @@ function registrosHtml(){
     h += `<ul class="hist">`;
     all.slice(0, 60).forEach(s => {
       const ms = new Date(s.end) - new Date(s.start), kc = kcalFor(s);
-      const alert = s.post && s.post.irradiada ? ' <span class="tag alert">dor na perna</span>' : "";
+      const alert = s.post && s.post.irradiada ? ' <span class="tag alert">dor na perna</span>' : s.post && s.post.dorAguda ? ' <span class="tag alert">dor forte</span>' : "";
       const inc = s.status === "incompleto" ? ' <span class="tag gray">incompleto</span>' : "";
       h += `<li><div><strong>${ddmm(s.date)}</strong> ${s.type === "treino" ? `<span class="tag">Treino ${esc(s.treino)}</span>` : `<span class="tag walk">Caminhada${num(s.km) ? " " + fmtNum(num(s.km)) + " km" : ""}</span>`}${inc}${alert}
         <div class="small">${timeOf(s.start)} às ${timeOf(s.end)} · ${fmtDur(ms)}${kc != null ? ` · ~${kc} kcal` : ""}</div>${s.post && s.post.obs ? `<div class="small muted">${esc(s.post.obs)}</div>` : ""}</div><button class="del" data-act="del" data-id="${esc(s.id)}">Apagar</button></li>`;
@@ -184,12 +184,12 @@ function drawCharts(){
 /* ---------- CSV ---------- */
 function csvCell(v){ if (v == null) return ""; let s = typeof v === "number" ? String(Math.round(v * 100) / 100).replace(".", ",") : String(v); if (/[";\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"'; return s; }
 function buildCsv(){
-  const head = ["Data", "Tipo", "Treino", "Exercício", "Série", "Carga (kg)", "Repetições", "Série concluída", "Início", "Fim", "Duração (min)", "Km", "Dor lombar antes", "Dor lombar depois", "Dor na perna", "Energia", "Sono (h)", "Avaliação do treino", "Observação", "Status", "kcal (estimativa)"];
+  const head = ["Data", "Tipo", "Treino", "Exercício", "Série", "Carga (kg)", "Repetições", "Série concluída", "Início", "Fim", "Duração (min)", "Km", dorLabel() + " antes", dorLabel() + " depois", hasRestr("lombar") ? "Dor na perna" : "Dor forte", "Energia", "Sono (h)", "Avaliação do treino", "Observação", "Status", "kcal (estimativa)"];
   const rows = [head];
   list().forEach(s => {
     const ms = s.end ? new Date(s.end) - new Date(s.start) : null;
     const c = { ini: timeOf(s.start), fim: timeOf(s.end), dur: ms != null ? durMin(ms) : null,
-      da: s.pre ? s.pre.dor : null, dd: s.post ? s.post.dor : null, perna: s.post && s.post.irradiada != null ? (s.post.irradiada ? "Sim" : "Não") : "",
+      da: s.pre ? s.pre.dor : null, dd: s.post ? s.post.dor : null, perna: s.post && (s.post.irradiada != null || s.post.dorAguda != null) ? (s.post.irradiada || s.post.dorAguda ? "Sim" : "Não") : "",
       en: s.pre ? s.pre.energia : null, sono: s.pre ? s.pre.sono : null, av: s.post ? s.post.sens : null, obs: s.post ? s.post.obs : "", st: s.status === "concluido" ? "Concluído" : s.status === "incompleto" ? "Incompleto" : "Em andamento", kc: s.end ? kcalFor(s) : null };
     // kcal só na primeira linha do treino, para a soma no Excel não repetir o valor a cada série
     let first = true;

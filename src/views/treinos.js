@@ -1,5 +1,5 @@
 // Aba Treinos: ver o plano, fazer check-in, registrar séries e check-out.
-import { S, save, flush, setStatus, activePlan, planLetters, treinoForDay, active, lastSetsFor, getEx, restOf, kcalOf } from "../store.js";
+import { S, save, flush, setStatus, activePlan, planLetters, treinoForDay, active, lastSetsFor, getEx, restOf, kcalOf, hasRestr, dorLabel } from "../store.js";
 import { ui, views, actions, inputs, changes, render, go, rerenderKeepScroll, openModal, closeModal, modalState, scaleHtml, rangeHtml, startRest, stopRest } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, restLabel, yt, newId, timeOf, pad, $ } from "../util.js";
 import { viewPlanos, viewPlanoEditor, templatesHtml, videoUrl, lombarTag } from "./plano.js";
@@ -57,7 +57,7 @@ actions.openTreino = el => { ui.treino = el.dataset.t; go("treinos"); };
 
 /* ---------- treino em andamento ---------- */
 function viewAtivo(s){
-  let h = `<div class="panel live"><div class="today-head"><div class="big-letter">${esc(s.treino)}</div><div style="flex:1"><h3>Treino ${esc(s.treino)} em andamento</h3><div class="elapsed" data-since="${esc(s.start)}">0:00</div><div class="small muted">Check-in: dor lombar ${s.pre && s.pre.dor != null ? s.pre.dor : "–"}/10, energia ${s.pre && s.pre.energia ? s.pre.energia : "–"}/5</div></div></div></div>`;
+  let h = `<div class="panel live"><div class="today-head"><div class="big-letter">${esc(s.treino)}</div><div style="flex:1"><h3>Treino ${esc(s.treino)} em andamento</h3><div class="elapsed" data-since="${esc(s.start)}">0:00</div><div class="small muted">Check-in: ${dorLabel().toLowerCase()} ${s.pre && s.pre.dor != null ? s.pre.dor : "–"}/10, energia ${s.pre && s.pre.energia ? s.pre.energia : "–"}/5</div></div></div></div>`;
   const wu = s.warmup || [], items = s.plano.warmup || [];
   if (items.length){
     h += `<h2>Aquecimento</h2><div class="panel warm"><ul>`;
@@ -87,7 +87,7 @@ function viewAtivo(s){
 actions.startTreino = el => {
   const L = el.dataset.t;
   openModal(`<h3>Check-in do treino ${L}</h3><p class="small muted" style="margin:6px 0 0">Ajuda a enxergar como seu corpo responde ao treino.</p>
-  <div class="field"><span class="lab">Dor lombar agora (0 a 10)</span>${rangeHtml("dor", 0)}</div>
+  <div class="field"><span class="lab">${dorLabel()} agora (0 a 10)</span>${rangeHtml("dor", 0)}</div>
   <div class="field"><span class="lab">Energia (1 a 5)</span>${scaleHtml("energia", 5, 1)}</div>
   <div class="field"><label class="lab" for="sono">Horas de sono (opcional)</label><input id="sono" class="txt" type="text" inputmode="decimal" placeholder="Ex.: 7,5"></div>
   <div class="row" style="margin-top:20px"><button class="btn ghost" data-act="closeModal">Voltar</button><button class="btn strength" data-act="confirmStartTreino">Iniciar treino ${L}</button></div>`,
@@ -105,6 +105,19 @@ actions.confirmStartTreino = () => {
 };
 
 /* ---------- check-out ---------- */
+// Pergunta de segurança obrigatória no check-out, conforme o perfil
+function SAFETY(){
+  if (hasRestr("lombar")) return {
+    q: "Sentiu dor descendo para a perna, formigamento ou choque?",
+    warn: "Pare os exercícios de perna e de dobradiça de quadril até ser avaliado. Procure seu médico ou fisioterapeuta nos próximos dias. Se houver dormência na região genital ou alteração para urinar ou evacuar, vá ao pronto-socorro imediatamente.",
+    err: "Responda se sentiu dor descendo para a perna. Essa resposta é importante para a sua segurança."
+  };
+  return {
+    q: "Sentiu alguma dor forte, pontada ou desconforto fora do normal?",
+    warn: "Evite o exercício que causou a dor nos próximos treinos e observe. Se a dor for forte ou continuar por mais de 2 a 3 dias, procure um médico ou fisioterapeuta. Dor no peito, falta de ar fora do comum, tontura ou desmaio: procure atendimento de urgência imediatamente.",
+    err: "Responda se sentiu alguma dor fora do normal. Essa resposta é importante para a sua segurança."
+  };
+}
 export function endTimeFieldHtml(s){
   const ms = Date.now() - new Date(s.start).getTime();
   if (ms < 3 * 3600 * 1000) return "";
@@ -123,9 +136,9 @@ export function readEndTime(s){
 actions.finishTreino = () => {
   const s = active("treino");
   openModal(`<h3>Check-out do treino</h3>
-  <div class="field"><span class="lab">Dor lombar agora (0 a 10)</span>${rangeHtml("dor", 0)}</div>
-  <div class="field"><span class="lab">Sentiu dor descendo para a perna, formigamento ou choque?</span><div class="yn" role="group"><button type="button" data-act="yn" data-v="nao" aria-pressed="false">Não</button><button type="button" data-act="yn" data-v="sim" aria-pressed="false">Sim</button></div>
-  <div class="warnbox" id="warn">Pare os exercícios de perna e de dobradiça de quadril até ser avaliado. Procure seu médico ou fisioterapeuta nos próximos dias. Se houver dormência na região genital ou alteração para urinar ou evacuar, vá ao pronto-socorro imediatamente.</div></div>
+  <div class="field"><span class="lab">${dorLabel()} agora (0 a 10)</span>${rangeHtml("dor", 0)}</div>
+  <div class="field"><span class="lab">${SAFETY().q}</span><div class="yn" role="group"><button type="button" data-act="yn" data-v="nao" aria-pressed="false">Não</button><button type="button" data-act="yn" data-v="sim" aria-pressed="false">Sim</button></div>
+  <div class="warnbox" id="warn">${SAFETY().warn}</div></div>
   <div class="field"><span class="lab">Como foi o treino (1 a 5)</span>${scaleHtml("sens", 5, 1)}</div>
   <div class="field"><label class="lab" for="obs">Observação (opcional)</label><input id="obs" class="txt" type="text" maxlength="200" placeholder="Ex.: leg press pesado hoje, lombar tranquila"></div>
   ${endTimeFieldHtml(s)}
@@ -141,13 +154,14 @@ actions.yn = el => {
 };
 actions.confirmFinishTreino = () => {
   const s = active("treino"); if (!s) return closeModal();
-  if (modalState.irradiada == null){ $("#co-err").textContent = "Responda se sentiu dor descendo para a perna. Essa resposta é importante para a sua segurança."; return; }
+  if (modalState.irradiada == null){ $("#co-err").textContent = SAFETY().err; return; }
   s.end = readEndTime(s); s.status = "concluido";
-  s.post = { dor: modalState.dor, irradiada: modalState.irradiada, sens: modalState.sens, obs: $("#obs").value.trim() };
+  // irradiada: dor descendo para a perna (quem tem hérnia lombar); dorAguda: dor forte/fora do normal (demais)
+  s.post = Object.assign({ dor: modalState.dor, sens: modalState.sens, obs: $("#obs").value.trim() }, hasRestr("lombar") ? { irradiada: modalState.irradiada } : { dorAguda: modalState.irradiada });
   s.kcal = kcalOf(s);
   closeModal(); flush("sessions", s.id); stopRest();
   go("hoje");
-  setStatus(s.post.irradiada ? "Treino salvo. Procure avaliação pela dor na perna." : "Treino concluído" + (s.kcal ? ` · cerca de ${s.kcal} kcal` : ""));
+  setStatus(s.post.irradiada ? "Treino salvo. Procure avaliação pela dor na perna." : s.post.dorAguda ? "Treino salvo. Observe a dor e procure avaliação se continuar." : "Treino concluído" + (s.kcal ? ` · cerca de ${s.kcal} kcal` : ""));
 };
 
 /* ---------- séries ---------- */

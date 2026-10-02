@@ -128,6 +128,11 @@ export function setStatus(t){
   if (t === "Salvo") statusTimer = setTimeout(() => { el.textContent = ""; }, 2000);
 }
 
+/* ---------- restrições de saúde do perfil ---------- */
+export const hasRestr = k => !!(S.profile && (S.profile.restricoes || []).includes(k));
+// Quem marcou hérnia/dor lombar responde sobre dor lombar e dor irradiada; os demais, sobre dor em geral
+export const dorLabel = () => (hasRestr("lombar") ? "Dor lombar" : "Dor ou desconforto");
+
 /* ---------- exercícios ---------- */
 export function getEx(id){
   const base = EX_BASE_BY_ID[id], ov = S.exOverrides[id];

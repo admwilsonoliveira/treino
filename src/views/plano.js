@@ -1,12 +1,12 @@
 // Planos de treino: lista, modelos prontos, editor (ABC/ABCD/ABCDE) e escolha de exercícios.
-import { S, save, flush, activePlan, planLetters, getEx, allExercises, restOf } from "../store.js";
+import { S, save, flush, activePlan, planLetters, getEx, allExercises, restOf, hasRestr } from "../store.js";
 import { ui, actions, inputs, changes, render, go, rerenderKeepScroll, openModal, closeModal, modalState } from "../ui.js";
 import { esc, num, norm, newId, clone, restLabel, yt, isYoutubeUrl, DIAS_CURTO, $ } from "../util.js";
 import { TEMPLATES, LETTERS, SPLITS, emptyTreinos, WARMUP_GERAL } from "../data/templates.js";
 import { GRUPOS, EQUIP, LOMBAR, defaultRx } from "../data/exercises.js";
 import { downloadTemplate, pickSpreadsheet } from "../importar.js";
 
-export const hasLombar = () => !!(S.profile && (S.profile.restricoes || []).includes("lombar"));
+export const hasLombar = () => hasRestr("lombar");
 
 export function videoUrl(ex){ return ex.video && isYoutubeUrl(ex.video) ? ex.video : yt(ex.v || (ex.nome + " execução correta")); }
 export function lombarTag(ex){
