@@ -5,6 +5,8 @@ import { esc, num, norm, newId, clone, restLabel, yt, isYoutubeUrl, DIAS_CURTO, 
 import { TEMPLATES, LETTERS, SPLITS, emptyTreinos, WARMUP_GERAL } from "../data/templates.js";
 import { GRUPOS, EQUIP, LOMBAR, defaultRx } from "../data/exercises.js";
 import { downloadTemplate, pickSpreadsheet } from "../importar.js";
+import { programaDe, semanaInfo } from "../programa.js";
+import { mondayOf, ymd } from "../util.js";
 
 export const hasLombar = () => hasRestr("lombar");
 
@@ -105,6 +107,12 @@ export function viewPlanoEditor(){
   });
   h += `<button class="btn strength block" style="margin-top:12px" data-act="openPicker">Adicionar exercício</button></div>`;
 
+  const prog = programaDe(p), si = semanaInfo(p);
+  h += `<h2>Programa de 12 semanas</h2><div class="panel">
+    <label class="small" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-act="progAtivo" ${prog.ativo ? "checked" : ""} style="width:22px;height:22px;accent-color:var(--strength)"> <span>Seguir o programa (adaptação, acúmulo e semanas de <em>deload</em>)</span></label>
+    ${prog.ativo ? `<div class="field"><label class="lab small" for="progInicio">Início da semana 1</label><input id="progInicio" class="txt" type="date" data-act="progInicio" value="${esc(prog.inicio)}">
+      <div class="help">${si && !si.antes ? `Hoje: semana ${si.semana} de 12${si.ciclo > 1 ? " do ciclo " + si.ciclo : ""} (${esc(si.fase.nome)}).` : "O programa ainda não começou."} Semanas 1–2: adaptação · 3–6: acúmulo · 7: deload · 8–11: acúmulo · 12: deload e reavaliação. Depois recomeça.</div></div>` : ""}
+  </div>`;
   h += `<h2>Aquecimento</h2><div class="panel"><label class="lab small muted" for="pl-warm">Um item por linha. Vale para todos os treinos deste plano.</label>
     <textarea id="pl-warm" class="txt" rows="6" style="margin-top:6px" data-act="planWarm">${esc((p.warmup || []).map(w => w.t).join("\n"))}</textarea></div>`;
 
@@ -120,6 +128,13 @@ inputs.planWarm = el => {
   const p = curPlan(), old = p.warmup || [];
   p.warmup = el.value.split("\n").map(s => s.trim()).filter(Boolean).map(t => { const o = old.find(w => w.t === t); return o ? o : { t }; });
   save("plans", p.id);
+};
+changes.progAtivo = el => { const p = curPlan(); p.programa = Object.assign(programaDe(p), { ativo: el.checked }); flush("plans", p.id); rerenderKeepScroll(); };
+changes.progInicio = el => {
+  if (!el.value) return;
+  // a semana 1 sempre começa numa segunda-feira
+  const p = curPlan(); p.programa = Object.assign(programaDe(p), { inicio: ymd(mondayOf(new Date(el.value + "T12:00:00"))) });
+  flush("plans", p.id); rerenderKeepScroll();
 };
 actions.editL = el => { ui.editL = el.dataset.t; rerenderKeepScroll(); };
 actions.planDia = el => {

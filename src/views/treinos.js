@@ -4,15 +4,34 @@ import { ui, views, actions, inputs, changes, render, go, rerenderKeepScroll, op
 import { esc, num, fmtNum, ymd, ddmm, restLabel, yt, newId, timeOf, pad, $ } from "../util.js";
 import { viewPlanos, viewPlanoEditor, templatesHtml, videoUrl, lombarTag } from "./plano.js";
 import { viewResumo, summaryCard } from "./equilibrio.js";
+import { semanaInfo, seriesNaSemana } from "../programa.js";
+import { sugestao } from "../progressao.js";
+
+// Faixa da semana do programa de 12 semanas (deload em destaque)
+export function semanaHtml(info, compacto = false){
+  if (!info || info.antes || !info.fase) return "";
+  const f = info.fase;
+  return `<div class="${f.deload ? "infobox" : "small"}" style="${f.deload ? "background:var(--walk-soft);margin-top:10px" : "margin-top:8px"}"><strong>Semana ${info.semana} de 12${info.ciclo > 1 ? " (ciclo " + info.ciclo + ")" : ""} · ${esc(f.nome)}</strong> · ${esc(f.rir)}${compacto ? "" : `<div class="small" style="margin-top:2px">${esc(f.nota)}</div>`}</div>`;
+}
+const SUG_COR = { subir: "var(--strength)", deload: "var(--walk)", bloqueado: "var(--danger)", abaixo: "var(--walk)", limite: "var(--ink-2)", manter: "var(--ink-2)", reps: "var(--strength)" };
+function sugHtml(sg){ return sg ? `<div class="small" style="margin-top:6px;border-left:3px solid ${SUG_COR[sg.tipo]};padding-left:8px">${sg.tipo === "subir" ? "⬆️ " : sg.tipo === "bloqueado" ? "⛔ " : "💡 "}${esc(sg.texto)}</div>` : ""; }
+const planoDaSessao = s => S.plans[s.planId] || activePlan();
+// Valor sugerido para cada série: a carga da sugestão (subir/deload) ou a da última vez
+function sugeridoPara(last, sg, i){
+  const ph = last && last.sets[i] ? last.sets[i] : (last && last.sets.length ? last.sets[last.sets.length - 1] : null);
+  let kg = ph && num(ph.kg) != null ? num(ph.kg) : null, reps = ph && num(ph.reps) != null ? num(ph.reps) : null;
+  if (sg && (sg.tipo === "subir" || sg.tipo === "deload") && sg.kg){ kg = sg.kg; if (sg.reps) reps = sg.reps; }
+  return { kg, reps };
+}
 
 function setsSummary(sets, ex){
   const parts = sets.filter(x => num(x.reps) != null || num(x.kg) != null).map(x => (ex.load === false ? "" : (num(x.kg) != null ? fmtNum(num(x.kg)) + " kg × " : "")) + (num(x.reps) != null ? num(x.reps) : "–"));
   return parts.length ? esc(parts.join(", ")) : "sem registro";
 }
 export { setsSummary };
-function ensureSets(s, it){
+function ensureSets(s, it, n = it.series){
   if (!s.sets) s.sets = {};
-  if (!s.sets[it.exId]) s.sets[it.exId] = Array.from({ length: it.series }, () => ({ kg: "", reps: "", ok: false }));
+  if (!s.sets[it.exId]) s.sets[it.exId] = Array.from({ length: n }, () => ({ kg: "", reps: "", ok: false }));
   return s.sets[it.exId];
 }
 const itemFor = (s, exId) => (s.plano.ex || []).find(x => x.exId === exId);
@@ -35,16 +54,17 @@ views.treinos = {
     h += `<div class="seg" role="group" aria-label="Escolha o treino" style="--n:${Ls.length}">`;
     Ls.forEach(k => { h += `<button type="button" data-act="pickTreino" data-t="${k}" aria-pressed="${k === L}">${k}<span>${(p.treinos[k].dias || []).map(d => ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][d]).join(", ") || "livre"}</span></button>`; });
     h += `</div>`;
-    h += `<div class="panel" style="margin-top:12px"><h3>Treino ${L}${t.foco ? ": " + esc(t.foco) : ""}</h3>`;
+    const info = semanaInfo(p);
+    h += `<div class="panel" style="margin-top:12px"><h3>Treino ${L}${t.foco ? ": " + esc(t.foco) : ""}</h3>${semanaHtml(info)}`;
     if (!t.ex.length) h += `<p class="small muted" style="margin:6px 0 12px">Este treino ainda não tem exercícios.</p><button class="btn strength block" data-act="goEditor">Adicionar exercícios</button></div>`;
     else h += `<p class="small muted" style="margin:6px 0 12px">Comece pelo aquecimento. O check-in leva 10 segundos.</p><button class="btn strength block" data-act="startTreino" data-t="${L}">Fazer check-in e iniciar treino ${L}</button></div>`;
     h += summaryCard(p);
     if (t.ex.length){
       h += `<h2>Exercícios</h2>`;
       t.ex.forEach(it => {
-        const ex = getEx(it.exId), last = lastSetsFor(it.exId);
-        h += `<div class="ex"><div class="ex-head"><div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}, descanso ${restLabel(restOf(it))}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div>
-          ${lombarTag(ex) ? `<div style="margin-top:6px">${lombarTag(ex)}</div>` : ""}<p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>${last ? `<div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div>` : ""}</div>`;
+        const ex = getEx(it.exId), last = lastSetsFor(it.exId), sg = sugestao(it, ex, null, info), ns = seriesNaSemana(it, ex, info);
+        h += `<div class="ex"><div class="ex-head"><div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}, descanso ${restLabel(restOf(it))}${ns !== it.series ? ` · <strong>nesta semana: ${ns} séries</strong>` : ""}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div>
+          ${lombarTag(ex) ? `<div style="margin-top:6px">${lombarTag(ex)}</div>` : ""}<p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>${last ? `<div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div>` : ""}${sugHtml(sg)}</div>`;
       });
     }
     return h;
@@ -57,7 +77,8 @@ actions.openTreino = el => { ui.treino = el.dataset.t; go("treinos"); };
 
 /* ---------- treino em andamento ---------- */
 function viewAtivo(s){
-  let h = `<div class="panel live"><div class="today-head"><div class="big-letter">${esc(s.treino)}</div><div style="flex:1"><h3>Treino ${esc(s.treino)} em andamento</h3><div class="elapsed" data-since="${esc(s.start)}">0:00</div><div class="small muted">Check-in: ${dorLabel().toLowerCase()} ${s.pre && s.pre.dor != null ? s.pre.dor : "–"}/10, energia ${s.pre && s.pre.energia ? s.pre.energia : "–"}/5</div></div></div></div>`;
+  const info = semanaInfo(planoDaSessao(s), new Date(s.start));
+  let h = `<div class="panel live"><div class="today-head"><div class="big-letter">${esc(s.treino)}</div><div style="flex:1"><h3>Treino ${esc(s.treino)} em andamento</h3><div class="elapsed" data-since="${esc(s.start)}">0:00</div><div class="small muted">Check-in: ${dorLabel().toLowerCase()} ${s.pre && s.pre.dor != null ? s.pre.dor : "–"}/10, energia ${s.pre && s.pre.energia ? s.pre.energia : "–"}/5</div></div></div>${semanaHtml(info)}</div>`;
   const wu = s.warmup || [], items = s.plano.warmup || [];
   if (items.length){
     h += `<h2>Aquecimento</h2><div class="panel warm"><ul>`;
@@ -66,15 +87,17 @@ function viewAtivo(s){
   }
   h += `<h2>Exercícios</h2>`;
   s.plano.ex.forEach(it => {
-    const ex = getEx(it.exId), sets = ensureSets(s, it), last = lastSetsFor(it.exId, s.id), unit = ex.load === false ? "" : (ex.unit || "kg");
+    const ex = getEx(it.exId), sets = ensureSets(s, it, seriesNaSemana(it, ex, info)), last = lastSetsFor(it.exId, s.id), unit = ex.load === false ? "" : (ex.unit || "kg");
+    const sg = sugestao(it, ex, s, info);
     h += `<div class="ex" id="ex-${esc(it.exId)}"><div class="ex-head"><div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div><p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>`;
     if (last) h += `<div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div>`;
+    h += sugHtml(sg);
     h += `<div class="set-cols"><span>Série</span><span>${ex.load === false ? "" : "Carga (" + esc(unit) + ")"}</span><span>${ex.tipo === "core" && ex.load === false ? "Reps ou s" : "Repetições"}</span><span></span></div><div class="sets">`;
     sets.forEach((x, i) => {
-      const ph = last && last.sets[i] ? last.sets[i] : null;
+      const ph = sugeridoPara(last, sg, i);
       h += `<div class="set"><label for="r-${esc(it.exId)}-${i}">Série ${i + 1}</label>`;
-      h += ex.load === false ? `<span></span>` : `<input type="text" inputmode="decimal" aria-label="Carga série ${i + 1}" data-act="kg" data-ex="${esc(it.exId)}" data-i="${i}" value="${esc(x.kg ? String(x.kg).replace(".", ",") : "")}" placeholder="${ph && num(ph.kg) != null ? fmtNum(num(ph.kg)) : ""}">`;
-      h += `<input type="text" inputmode="numeric" id="r-${esc(it.exId)}-${i}" aria-label="Repetições série ${i + 1}" data-act="reps" data-ex="${esc(it.exId)}" data-i="${i}" value="${esc(x.reps)}" placeholder="${ph && num(ph.reps) != null ? num(ph.reps) : ""}">`;
+      h += ex.load === false ? `<span></span>` : `<input type="text" inputmode="decimal" aria-label="Carga série ${i + 1}" data-act="kg" data-ex="${esc(it.exId)}" data-i="${i}" value="${esc(x.kg ? String(x.kg).replace(".", ",") : "")}" placeholder="${ph.kg != null ? fmtNum(ph.kg) : ""}">`;
+      h += `<input type="text" inputmode="numeric" id="r-${esc(it.exId)}-${i}" aria-label="Repetições série ${i + 1}" data-act="reps" data-ex="${esc(it.exId)}" data-i="${i}" value="${esc(x.reps)}" placeholder="${ph.reps != null ? ph.reps : ""}">`;
       h += `<button type="button" class="chk ${x.ok ? "on" : ""}" aria-pressed="${!!x.ok}" aria-label="Concluir série ${i + 1}" data-act="ok" data-ex="${esc(it.exId)}" data-i="${i}">✓</button></div>`;
     });
     h += `</div><div class="row" style="justify-content:space-between"><button class="linkbtn" data-act="addSet" data-ex="${esc(it.exId)}">Adicionar série</button><button class="linkbtn" data-act="rest" data-s="${restOf(it)}">Descanso ${restLabel(restOf(it))}</button></div></div>`;
@@ -170,9 +193,10 @@ actions.ok = el => {
   const it = itemFor(s, el.dataset.ex), ex = getEx(el.dataset.ex), i = +el.dataset.i, sets = ensureSets(s, it), x = sets[i];
   x.ok = !x.ok;
   if (x.ok){
-    const last = lastSetsFor(it.exId, s.id), ph = last && last.sets[i], row = el.parentElement;
-    if (x.kg === "" && ph && num(ph.kg) != null && ex.load !== false){ x.kg = String(num(ph.kg)); const ik = row.querySelector('[data-act="kg"]'); if (ik) ik.value = fmtNum(num(ph.kg)); }
-    if (x.reps === "" && ph && num(ph.reps) != null){ x.reps = String(num(ph.reps)); const ir = row.querySelector('[data-act="reps"]'); if (ir) ir.value = num(ph.reps); }
+    // série vazia: preenche com o valor sugerido (o da sugestão de carga ou o da última vez)
+    const last = lastSetsFor(it.exId, s.id), sg = sugestao(it, ex, s, semanaInfo(planoDaSessao(s), new Date(s.start))), ph = sugeridoPara(last, sg, i), row = el.parentElement;
+    if (x.kg === "" && ph.kg != null && ex.load !== false){ x.kg = String(ph.kg); const ik = row.querySelector('[data-act="kg"]'); if (ik) ik.value = fmtNum(ph.kg); }
+    if (x.reps === "" && ph.reps != null){ x.reps = String(ph.reps); const ir = row.querySelector('[data-act="reps"]'); if (ir) ir.value = ph.reps; }
     startRest(restOf(it), ex.nome);
   }
   el.classList.toggle("on", x.ok); el.setAttribute("aria-pressed", String(x.ok));

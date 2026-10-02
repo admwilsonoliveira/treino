@@ -2,6 +2,8 @@
 import { S, activePlan, planLetters, treinoForDay, active, done } from "../store.js";
 import { ui, views } from "../ui.js";
 import { remoteBannerHtml } from "./nuvem.js";
+import { semanaInfo } from "../programa.js";
+import { semanaHtml } from "./treinos.js";
 import { esc, num, fmtNum, ymd, mondayOf, DIAS, DIAS_CURTO } from "../util.js";
 
 views.hoje = {
@@ -27,6 +29,7 @@ views.hoje = {
       h += `<div class="big-letter rest">–</div><div><h3>${DIAS[wd]}: descanso da musculação</h3><div class="muted small">Recuperação também faz parte do plano.</div></div>`;
     }
     h += `</div>`;
+    if (p && t) h += semanaHtml(semanaInfo(p), true);
     if (isWalkDay) h += `<div class="small" style="margin-top:12px"><span class="tag walk">Caminhada ${fmtNum(w.km)} km às ${esc(w.hora)}</span>${wDone ? ' <span class="tag">Caminhada feita</span>' : ""}</div>`;
     h += `<div class="row" style="margin-top:14px">`;
     if (!p) h += `<button class="btn strength" data-act="goTab" data-tab="treinos">Escolher plano</button>`;

@@ -5,6 +5,7 @@ import { ui, views, actions, changes, render } from "../ui.js";
 import { esc, num, fmtNum, ddmm, ddmmyyyy, durMin, timeOf, ymd, pad, mondayOf, downloadBlob } from "../util.js";
 import { setsSummary } from "./treinos.js";
 import { relatorioHtml } from "./relatorio.js";
+import { editarHtml, abrirEdicao } from "./editar.js";
 
 Chart.register(LineController, LineElement, PointElement, BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend);
 
@@ -22,6 +23,7 @@ function exOptions(){
 
 views.evolucao = {
   html(){
+    if (ui.sub === "editar") return editarHtml();
     const v = ui.evoView;
     let h = `<div class="toggle" role="group" aria-label="Visão" style="margin-top:0">${[["cargas", "Cargas"], ["corpo", "Corpo"], ["calorias", "Calorias"], ["dor", "Dor"], ["registros", "Registros"], ["relatorio", "Relatório"]].map(([k, t]) => `<button type="button" data-act="evoView" data-v="${k}" aria-pressed="${v === k}">${t}</button>`).join("")}</div>`;
     if (v === "cargas") h += cargasHtml();
@@ -32,9 +34,10 @@ views.evolucao = {
     else h += registrosHtml();
     return h;
   },
-  after: drawCharts
+  after(){ if (!ui.sub) drawCharts(); }
 };
 actions.evoView = el => { ui.evoView = el.dataset.v; render(); };
+actions.edOpen = el => abrirEdicao(el.dataset.id);
 
 function cargasHtml(){
   const ids = exOptions();
@@ -128,7 +131,7 @@ function registrosHtml(){
       const alert = s.post && s.post.irradiada ? ' <span class="tag alert">dor na perna</span>' : s.post && s.post.dorAguda ? ' <span class="tag alert">dor forte</span>' : "";
       const inc = s.status === "incompleto" ? ' <span class="tag gray">incompleto</span>' : "";
       h += `<li><div><strong>${ddmm(s.date)}</strong> ${s.type === "treino" ? `<span class="tag">Treino ${esc(s.treino)}</span>` : `<span class="tag walk">Caminhada${num(s.km) ? " " + fmtNum(num(s.km)) + " km" : ""}</span>`}${inc}${alert}
-        <div class="small">${timeOf(s.start)} às ${timeOf(s.end)} · ${fmtDur(ms)}${kc != null ? ` · ~${kc} kcal` : ""}</div>${s.post && s.post.obs ? `<div class="small muted">${esc(s.post.obs)}</div>` : ""}</div><button class="del" data-act="del" data-id="${esc(s.id)}">Apagar</button></li>`;
+        <div class="small">${timeOf(s.start)} às ${timeOf(s.end)} · ${fmtDur(ms)}${kc != null ? ` · ~${kc} kcal` : ""}</div>${s.post && s.post.obs ? `<div class="small muted">${esc(s.post.obs)}</div>` : ""}</div><div style="display:flex;flex-direction:column;align-items:flex-end"><button class="del" data-act="edOpen" data-id="${esc(s.id)}">Editar</button><button class="del" data-act="del" data-id="${esc(s.id)}">Apagar</button></div></li>`;
     });
     h += `</ul>`;
   }
