@@ -1,7 +1,8 @@
 // Armazenamento no aparelho (IndexedDB). Cada "store" guarda objetos com campo id.
 const DB_NAME = "treino-app";
-const DB_VERSION = 1;
-export const STORES = ["kv", "sessions", "measurements", "plans", "exercises"];
+// v2: store "fotos" (foto do aparelho de cada exercício)
+const DB_VERSION = 2;
+export const STORES = ["kv", "sessions", "measurements", "plans", "exercises", "fotos"];
 
 let dbp = null;
 function open(){
@@ -30,10 +31,12 @@ export const getAll = store => tx(store, "readonly", s => s.getAll());
 export const put = (store, obj) => tx(store, "readwrite", s => { s.put(JSON.parse(JSON.stringify(obj))); });
 export const del = (store, id) => tx(store, "readwrite", s => { s.delete(id); });
 export function replaceAll(data){
-  // Restauração completa: apaga tudo e grava o conteúdo do backup numa única transação
+  // Restauração: apaga e regrava, numa única transação, só as stores presentes no backup
+  // (o backup do Drive não leva as fotos; elas vêm de um arquivo separado)
+  const alvo = STORES.filter(n => Array.isArray(data[n]));
   return open().then(db => new Promise((resolve, reject) => {
-    const t = db.transaction(STORES, "readwrite");
-    STORES.forEach(n => {
+    const t = db.transaction(alvo, "readwrite");
+    alvo.forEach(n => {
       const s = t.objectStore(n); s.clear();
       (data[n] || []).forEach(o => { if (o && o.id != null) s.put(o); });
     });

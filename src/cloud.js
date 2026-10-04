@@ -9,10 +9,11 @@ import { isNative } from "./native.js";
 const WEB_CLIENT_ID = "955091117059-ljiv58m58919efirbdau7onjklvn437f.apps.googleusercontent.com";
 const SCOPES = ["email", "profile", "https://www.googleapis.com/auth/drive.appdata"];
 const FILE_NAME = "treino-backup.json";
+const FOTOS_NAME = "treino-fotos.json"; // fotos dos aparelhos: arquivo separado, enviado só quando as fotos mudam
 const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
 
-let SL = null, token = null, tokenExp = 0, dirty = false, timer = null, busy = false;
+let SL = null, token = null, tokenExp = 0, dirty = false, fotosDirty = false, timer = null, busy = false;
 export const cloud = { status: "", erro: "", remote: null }; // remote: { modifiedTime, device, registros } quando há backup mais novo de outro aparelho
 
 /* ---------- identificação deste aparelho (não vai no backup) ---------- */
@@ -91,16 +92,16 @@ async function driveError(r){
   }
   return new Error(`Google Drive respondeu ${r.status}${reason ? " (" + reason + ")" : ""}${msg ? ": " + msg : ""}`);
 }
-async function findFile(){
-  const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+async function findFile(name = FILE_NAME){
+  const q = encodeURIComponent(`name='${name}' and trashed=false`);
   const r = await api(`${API}/files?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime,size,appProperties)&orderBy=modifiedTime desc`);
   const j = await r.json();
   return (j.files || [])[0] || null;
 }
 async function downloadFile(id){ return (await api(`${API}/files/${id}?alt=media`)).json(); }
-async function uploadFile(existingId, data){
+async function uploadFile(existingId, data, name = FILE_NAME){
   const body = JSON.stringify(data);
-  const meta = { appProperties: { device: deviceId(), registros: String(data.sessions.length) } };
+  const meta = { appProperties: { device: deviceId(), registros: String((data.sessions || data.fotos || []).length) } };
   if (existingId){
     // atualiza conteúdo e metadados numa única requisição
     const boundary = "treino" + Date.now();
@@ -108,7 +109,7 @@ async function uploadFile(existingId, data){
     return (await api(`${UPLOAD}/files/${existingId}?uploadType=multipart&fields=id,modifiedTime`, { method: "PATCH", headers: { "Content-Type": "multipart/related; boundary=" + boundary }, body: multipart })).json();
   }
   const boundary = "treino" + Date.now();
-  const createMeta = Object.assign({ name: FILE_NAME, parents: ["appDataFolder"] }, meta);
+  const createMeta = Object.assign({ name, parents: ["appDataFolder"] }, meta);
   const multipart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(createMeta)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${boundary}--`;
   return (await api(`${UPLOAD}/files?uploadType=multipart&fields=id,modifiedTime`, { method: "POST", headers: { "Content-Type": "multipart/related; boundary=" + boundary }, body: multipart })).json();
 }
@@ -123,6 +124,14 @@ export async function backupNow(manual = false){
     const f = await findFile();
     const res = await uploadFile(f && f.id, data);
     dirty = false; cloud.remote = null;
+    // fotos: só quando mudaram (ou nunca foram enviadas e existem)
+    const nFotos = Object.keys(S.fotos).length;
+    if (fotosDirty || (!nuvem().fotosEnviadas && nFotos)){
+      const ff = await findFile(FOTOS_NAME);
+      if (nFotos || ff) await uploadFile(ff && ff.id, { app: "treino-app", fotos: Object.values(S.fotos) }, FOTOS_NAME);
+      fotosDirty = false;
+      await setNuvem({ fotosEnviadas: true });
+    }
     await setNuvem({ fileId: res.id, ultimoEnvio: res.modifiedTime || new Date().toISOString() });
     cloud.status = ""; cloud.erro = "";
     if (manual) setStatus("Backup salvo no Google Drive");
@@ -145,10 +154,12 @@ export async function restoreFromDrive(){
   if (!f) throw new Error("Não há backup no seu Google Drive ainda.");
   const d = await downloadFile(f.id);
   const err = validateBackup(d); if (err) throw new Error(err);
+  // fotos dos aparelhos, se houver backup delas
+  try{ const ff = await findFile(FOTOS_NAME); if (ff){ const fd = await downloadFile(ff.id); if (Array.isArray(fd.fotos)) d.fotos = fd.fotos; } }catch(e){}
   const login = nuvem();
   await restoreData(d);
   // mantém o login deste aparelho e registra que já está em dia com o Drive
-  S.settings.nuvem = Object.assign({}, login, { fileId: f.id, ultimoEnvio: f.modifiedTime });
+  S.settings.nuvem = Object.assign({}, login, { fileId: f.id, ultimoEnvio: f.modifiedTime, fotosEnviadas: true });
   await flush("kv", "settings", true);
   dirty = false; cloud.remote = null;
 }
@@ -164,9 +175,10 @@ export async function checkRemoteNewer(){
 }
 
 /* ---------- automático ---------- */
-function scheduleBackup(){
+function scheduleBackup(store){
   if (!nuvem() || !nuvem().email) return;
   dirty = true;
+  if (store === "fotos") fotosDirty = true;
   clearTimeout(timer);
   timer = setTimeout(() => backupNow(false), 20 * 1000);
 }

@@ -39,7 +39,7 @@ views.hoje = {
 
     // semana
     const mon = mondayOf(d), nTreinos = p ? new Set(planLetters(p).flatMap(L => p.treinos[L].dias || [])).size : 0;
-    h += `<h2>Esta semana</h2><div class="week">`;
+    h += `<div class="between"><h2>Esta semana</h2>${p ? `<button class="linkbtn" data-act="goSemana">Organizar a semana</button>` : ""}</div><div class="week">`;
     let ts = 0, ws = 0;
     for (let i = 0; i < 7; i++){
       const x = new Date(mon); x.setDate(mon.getDate() + i); const key = ymd(x), wdx = x.getDay();

@@ -108,6 +108,7 @@ export function viewPlanoEditor(){
   h += `<button class="btn strength block" style="margin-top:12px" data-act="openPicker">Adicionar exercício</button></div>`;
 
   const prog = programaDe(p), si = semanaInfo(p);
+  h += `<button class="btn ghost block" style="margin-top:12px" data-act="goSemana">Organizar a semana (dias de cada treino)</button>`;
   h += `<h2>Programa de 12 semanas</h2><div class="panel">
     <label class="small" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-act="progAtivo" ${prog.ativo ? "checked" : ""} style="width:22px;height:22px;accent-color:var(--strength)"> <span>Seguir o programa (adaptação, acúmulo e semanas de <em>deload</em>)</span></label>
     ${prog.ativo ? `<div class="field"><label class="lab small" for="progInicio">Início da semana 1</label><input id="progInicio" class="txt" type="date" data-act="progInicio" value="${esc(prog.inicio)}">

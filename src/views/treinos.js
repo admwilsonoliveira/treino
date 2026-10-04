@@ -6,6 +6,8 @@ import { viewPlanos, viewPlanoEditor, templatesHtml, videoUrl, lombarTag } from 
 import { viewResumo, summaryCard } from "./equilibrio.js";
 import { semanaInfo, seriesNaSemana } from "../programa.js";
 import { sugestao } from "../progressao.js";
+import { fotoHtml } from "./fotos.js";
+import { semanaHtml as organizarSemanaHtml } from "./semana.js";
 
 // Faixa da semana do programa de 12 semanas (deload em destaque)
 export function semanaHtml(info, compacto = false){
@@ -43,6 +45,7 @@ views.treinos = {
     if (ui.sub === "planos") return viewPlanos();
     if (ui.sub === "plano") return viewPlanoEditor();
     if (ui.sub === "resumo") return viewResumo();
+    if (ui.sub === "semana") return organizarSemanaHtml();
     const at = active("treino");
     if (at) return viewAtivo(at);
     const p = activePlan();
@@ -50,7 +53,7 @@ views.treinos = {
     const Ls = planLetters(p);
     if (!ui.treino || !p.treinos[ui.treino]) ui.treino = treinoForDay(p, new Date().getDay()) || Ls[0];
     const L = ui.treino, t = p.treinos[L];
-    let h = `<div class="between" style="margin-bottom:10px"><div class="small muted">${esc(p.nome)}</div><div class="row" style="gap:14px"><button class="linkbtn" data-act="goPlanos2">Planos</button><button class="linkbtn" data-act="goEditor">Editar plano</button></div></div>`;
+    let h = `<div class="between" style="margin-bottom:10px"><div class="small muted">${esc(p.nome)}</div><div class="row" style="gap:14px"><button class="linkbtn" data-act="goSemana">Semana</button><button class="linkbtn" data-act="goPlanos2">Planos</button><button class="linkbtn" data-act="goEditor">Editar plano</button></div></div>`;
     h += `<div class="seg" role="group" aria-label="Escolha o treino" style="--n:${Ls.length}">`;
     Ls.forEach(k => { h += `<button type="button" data-act="pickTreino" data-t="${k}" aria-pressed="${k === L}">${k}<span>${(p.treinos[k].dias || []).map(d => ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][d]).join(", ") || "livre"}</span></button>`; });
     h += `</div>`;
@@ -63,7 +66,7 @@ views.treinos = {
       h += `<h2>Exercícios</h2>`;
       t.ex.forEach(it => {
         const ex = getEx(it.exId), last = lastSetsFor(it.exId), sg = sugestao(it, ex, null, info), ns = seriesNaSemana(it, ex, info);
-        h += `<div class="ex"><div class="ex-head"><div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}, descanso ${restLabel(restOf(it))}${ns !== it.series ? ` · <strong>nesta semana: ${ns} séries</strong>` : ""}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div>
+        h += `<div class="ex"><div class="ex-head"><div class="ex-top">${S.fotos[it.exId] ? fotoHtml(it.exId) : ""}<div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}, descanso ${restLabel(restOf(it))}${ns !== it.series ? ` · <strong>nesta semana: ${ns} séries</strong>` : ""}</div>${S.fotos[it.exId] ? "" : fotoHtml(it.exId)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div>
           ${lombarTag(ex) ? `<div style="margin-top:6px">${lombarTag(ex)}</div>` : ""}<p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>${last ? `<div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div>` : ""}${sugHtml(sg)}</div>`;
       });
     }
@@ -89,7 +92,7 @@ function viewAtivo(s){
   s.plano.ex.forEach(it => {
     const ex = getEx(it.exId), sets = ensureSets(s, it, seriesNaSemana(it, ex, info)), last = lastSetsFor(it.exId, s.id), unit = ex.load === false ? "" : (ex.unit || "kg");
     const sg = sugestao(it, ex, s, info);
-    h += `<div class="ex" id="ex-${esc(it.exId)}"><div class="ex-head"><div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div><p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>`;
+    h += `<div class="ex" id="ex-${esc(it.exId)}"><div class="ex-head"><div class="ex-top">${S.fotos[it.exId] ? fotoHtml(it.exId) : ""}<div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}</div>${S.fotos[it.exId] ? "" : fotoHtml(it.exId)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div><p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>`;
     if (last) h += `<div class="between" style="align-items:center"><div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div><button class="linkbtn" style="white-space:nowrap;margin-left:8px" data-act="repetir" data-ex="${esc(it.exId)}">↺ Repetir</button></div>`;
     h += sugHtml(sg);
     h += `<div class="set-cols"><span>Série</span><span>${ex.load === false ? "" : "Carga (" + esc(unit) + ")"}</span><span>${ex.tipo === "core" && ex.load === false ? "Reps ou s" : "Repetições"}</span><span></span></div><div class="sets">`;

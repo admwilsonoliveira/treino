@@ -10,7 +10,8 @@ export const S = {
   sessions: {},           // treinos e caminhadas
   measurements: {},       // pesagens e bioimpedância
   plans: {},              // planos de treino
-  exOverrides: {}         // exercícios criados pelo usuário e ajustes nos do banco (ex.: link de vídeo)
+  exOverrides: {},        // exercícios criados pelo usuário e ajustes nos do banco (ex.: link de vídeo)
+  fotos: {}               // foto do aparelho de cada exercício: { id: exId, data, thumb, atualizado }
 };
 
 export const DEFAULT_SETTINGS = { id: "settings", activePlanId: null, restPadrao: 60, walk: { ativo: true, km: 5, dias: [1, 2, 3, 4, 5], hora: "18:00" },
@@ -26,13 +27,14 @@ export const restOf = it => (it && it.rest > 0 ? it.rest : (S.settings && S.sett
 export const BACKUP_VERSION = 1;
 
 export async function loadAll(){
-  const [kv, sessions, measurements, plans, exercises] = await Promise.all(db.STORES.map(n => db.getAll(n)));
+  const [kv, sessions, measurements, plans, exercises, fotos] = await Promise.all(db.STORES.map(n => db.getAll(n)));
   S.profile = kv.find(x => x.id === "profile") || null;
   S.settings = Object.assign(clone(DEFAULT_SETTINGS), kv.find(x => x.id === "settings") || {});
   S.sessions = Object.fromEntries(sessions.map(x => [x.id, x]));
   S.measurements = Object.fromEntries(measurements.map(x => [x.id, x]));
   S.plans = Object.fromEntries(plans.map(x => [x.id, x]));
   S.exOverrides = Object.fromEntries(exercises.map(x => [x.id, x]));
+  S.fotos = Object.fromEntries((fotos || []).map(x => [x.id, x]));
   migrate();
 }
 
@@ -85,6 +87,14 @@ export function kcalOf(s){
   return Math.round(met * kg * Math.min(h, 4));
 }
 export const kcalFor = s => (s.kcal != null ? s.kcal : kcalOf(s));
+// Calorias "a mais" que a atividade gastou além do repouso (MET − 1), para somar ao metabolismo sem contar o repouso duas vezes
+export function kcalLiquidaOf(s){
+  if (!s.end || !s.start) return null;
+  const h = (new Date(s.end) - new Date(s.start)) / 3600000, kg = weightAt(s.date);
+  if (!(h > 0) || !kg) return null;
+  const met = s.type === "caminhada" ? walkMet(num(s.km) / h) : 3.5;
+  return Math.round((met - 1) * kg * Math.min(h, 4));
+}
 
 /* ---------- IMC ---------- */
 export function imc(peso, alturaCm){ return peso && alturaCm ? peso / Math.pow(alturaCm / 100, 2) : null; }
@@ -94,7 +104,7 @@ export function imcClasse(v){
 }
 
 /* ---------- gravação ---------- */
-const MAP = { sessions: "sessions", measurements: "measurements", plans: "plans", exercises: "exOverrides" };
+const MAP = { sessions: "sessions", measurements: "measurements", plans: "plans", exercises: "exOverrides", fotos: "fotos" };
 const timers = {}, chains = {};
 function objFor(store, id){
   if (store === "kv") return id === "profile" ? S.profile : S.settings;
@@ -191,13 +201,16 @@ export function latestWeight(){
 }
 
 /* ---------- backup ---------- */
-export function exportData(){
-  return {
+// fotos: true inclui as fotos dos aparelhos (backup em arquivo); o backup do Drive as envia num arquivo separado
+export function exportData({ fotos = false } = {}){
+  const d = {
     app: "treino-app", versao: BACKUP_VERSION, exportadoEm: new Date().toISOString(),
     kv: [S.profile, S.settings].filter(Boolean),
     sessions: Object.values(S.sessions), measurements: Object.values(S.measurements),
     plans: Object.values(S.plans), exercises: Object.values(S.exOverrides)
   };
+  if (fotos) d.fotos = Object.values(S.fotos);
+  return d;
 }
 export function validateBackup(d){
   if (!d || d.app !== "treino-app" || !Array.isArray(d.sessions) || !Array.isArray(d.plans)) return "Este arquivo não é um backup deste app.";
@@ -206,6 +219,8 @@ export function validateBackup(d){
 }
 export async function restoreData(d){
   await flushPending();
-  await db.replaceAll({ kv: d.kv || [], sessions: d.sessions || [], measurements: d.measurements || [], plans: d.plans || [], exercises: d.exercises || [] });
+  const dados = { kv: d.kv || [], sessions: d.sessions || [], measurements: d.measurements || [], plans: d.plans || [], exercises: d.exercises || [] };
+  if (Array.isArray(d.fotos)) dados.fotos = d.fotos; // só substitui as fotos se o backup trouxer fotos
+  await db.replaceAll(dados);
   await loadAll();
 }

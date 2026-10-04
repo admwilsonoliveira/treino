@@ -4,8 +4,8 @@
 // - Gasto em repouso: Katch-McArdle quando há % de gordura; senão Mifflin-St Jeor
 // - Gasto diário: repouso × fator de atividade (sessões de treino + caminhada por semana)
 // - Ritmo de peso: regressão linear das pesagens dos últimos 42 dias
-import { S, measurementsList, activePlan, planLetters, imc, imcClasse } from "./store.js";
-import { num, ageFrom } from "./util.js";
+import { S, measurementsList, activePlan, planLetters, imc, imcClasse, done, kcalLiquidaOf } from "./store.js";
+import { num, ageFrom, ymd } from "./util.js";
 
 const FAIXAS_GORDURA = {
   M: [[6, "essencial"], [14, "atleta"], [18, "boa forma"], [25, "aceitável"], [Infinity, "obesidade"]],
@@ -84,6 +84,23 @@ export function diagnostico(){
     Object.assign(d, { tmb, gastoDia: tmb * fa.f, fator: fa });
     d.itens.push({ k: "Gasto em repouso", v: Math.round(tmb), fmt: 0, un: "kcal/dia", txt: d.massaMagra ? "calculado pela massa magra" : "estimado por idade, peso e altura" });
     d.itens.push({ k: "Gasto diário estimado", v: Math.round(d.gastoDia), fmt: 0, un: "kcal/dia", txt: `com ${fa.sessoes} sessões de treino e caminhada por semana` });
+    // Gasto com o que foi realmente feito: repouso × 1,2 (vida diária) + média diária do gasto extra dos treinos e caminhadas dos últimos 28 dias
+    const reg = done(), primeiro = reg.length ? reg[0].date : null;
+    if (primeiro){
+      const desdePrimeiro = Math.floor((Date.now() - new Date(primeiro + "T00:00:00")) / 86400000) + 1;
+      const dias = Math.min(28, desdePrimeiro);
+      if (dias >= 7){
+        const desde = ymd(new Date(Date.now() - (dias - 1) * 86400000));
+        const janela = reg.filter(s => s.date >= desde);
+        const extra = janela.reduce((a, s) => a + (kcalLiquidaOf(s) || 0), 0) / dias;
+        const nT = janela.filter(s => s.type === "treino").length, nC = janela.filter(s => s.type === "caminhada").length;
+        d.gastoReal = tmb * 1.2 + extra;
+        d.gastoRealInfo = { dias, extra, nT, nC };
+        d.itens.push({ k: "Gasto diário com os treinos feitos", v: Math.round(d.gastoReal), fmt: 0, un: "kcal/dia", txt: `pelo que você fez nos últimos ${dias} dias: ${nT} treino${nT === 1 ? "" : "s"} e ${nC} caminhada${nC === 1 ? "" : "s"}` });
+      } else {
+        d.alertas.push({ nivel: "info", txt: `Com uma semana de registros (faltam ${7 - dias} dia${7 - dias === 1 ? "" : "s"}), o app calcula seu gasto diário pelos treinos e caminhadas que você realmente fez.` });
+      }
+    }
   }
 
   // Meta e ritmo

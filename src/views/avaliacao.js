@@ -40,6 +40,12 @@ function explicacao(i, d){
     }
     case "Gasto em repouso": return `<p>São as calorias que o corpo gasta por dia <strong>parado</strong>, só para se manter vivo: respirar, bater o coração, manter a temperatura. É a maior parte do gasto do dia.</p>
       <p><strong>Seu resultado:</strong> cerca de ${n0(i.v)} kcal por dia, ${d.massaMagra ? "calculado pela sua massa magra (fórmula de Katch-McArdle), que é mais preciso" : "estimado por idade, peso, altura e sexo (fórmula de Mifflin-St Jeor)"}.</p>`;
+    case "Gasto diário com os treinos feitos": {
+      const g = d.gastoRealInfo;
+      return `<p>É o gasto do dia calculado com o que você <strong>realmente fez</strong>, e não com o plano: metabolismo basal × 1,2 (as atividades comuns do dia, como andar pela casa e trabalhar) + a média diária do gasto extra dos treinos e caminhadas registrados.</p>
+      <p><strong>Seu resultado:</strong> cerca de ${n0(i.v)} kcal por dia. Nos últimos ${g.dias} dias foram ${g.nT} treinos e ${g.nC} caminhadas, que somaram em média ${n0(g.extra)} kcal por dia além do repouso.${(() => { if (!d.fator || !d.fator.sessoes) return ""; const porSemana = (g.nT + g.nC) / (g.dias / 7), r = porSemana / d.fator.sessoes; return ` Você fez em média ${fmtNum(porSemana, 1)} sessões por semana, para ${d.fator.sessoes} planejadas: ${r >= 0.85 && r <= 1.15 ? "está seguindo o plano." : r < 0.85 ? "menos que o planejado." : "mais que o planejado."}`; })()}</p>
+      <p class="muted">Conta só o que foi registrado no app. Treinos ou caminhadas não registrados ficam de fora. Este valor e o "gasto diário estimado" usam métodos diferentes; mesmo seguindo o plano, eles não ficam idênticos. Para acompanhar sua evolução, este é o mais fiel.</p>`;
+    }
     case "Gasto diário estimado": return `<p>É o gasto em repouso somado ao gasto das atividades do dia, incluindo treino e caminhada. Usamos um fator de atividade conforme as sessões por semana do seu plano (${d.fator.treinos} treinos + ${d.fator.caminhadas} caminhadas = fator ${fmtNum(d.fator.f, 3)}).</p>
       <p><strong>Seu resultado:</strong> cerca de ${n0(i.v)} kcal por dia. Comer, em média, abaixo disso faz perder peso; acima, ganhar.</p>
       <p class="muted">É uma estimativa, com margem de erro de 10% a 15%. O que vale de verdade é o ritmo do seu peso ao longo das semanas.</p>`;

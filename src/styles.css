@@ -183,6 +183,19 @@ th{color:var(--ink-2);font-weight:600}
 .steps{display:flex;gap:6px;margin-bottom:14px}
 .steps i{flex:1;height:4px;border-radius:2px;background:var(--line)}
 .steps i.on{background:var(--strength)}
+/* organizar a semana */
+.semrow{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.semrow:last-child{border-bottom:0}
+.semdia{font-weight:600}
+.semwalk[aria-pressed="true"]{background:var(--walk);border-color:var(--walk);color:var(--walk-ink)}
+
+/* foto do aparelho */
+.fotobtn{padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;width:56px;height:56px;flex:0 0 56px;background:var(--surface-2)}
+.fotobtn img{width:100%;height:100%;object-fit:cover;display:block}
+.fotoadd{font-size:13px;padding:4px 0}
+.ex-top{display:flex;gap:10px;align-items:flex-start}
+.ex-top > div{flex:1;min-width:0}
+
 /* explicação dos itens da avaliação */
 .expl{margin-top:6px}
 .expl summary{color:var(--strength);font-weight:600;cursor:pointer;padding:6px 0;list-style:none}
