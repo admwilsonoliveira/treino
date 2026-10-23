@@ -6,6 +6,7 @@ import "@fontsource/inter/800.css";
 import "./styles.css";
 
 import { S, loadAll, flushPending, activePlan, autoCloseStale } from "./store.js";
+import { aplicarTema, temaSalvo } from "./tema.js";
 import { ui, views, actions, inputs, changes, render, go, openModal, closeModal, modalOpen, syncWakeLock, stopRest } from "./ui.js";
 import { $, esc, ddmm, timeOf } from "./util.js";
 import "./views/hoje.js";
@@ -73,6 +74,7 @@ if (oauthReturn){
 } else start();
 
 async function start(){
+  aplicarTema(temaSalvo());
   try{
     await initNative();
     onBackButton(back);
@@ -84,6 +86,7 @@ async function start(){
     $("#app").innerHTML = `<div class="panel"><h3>Não foi possível abrir seus dados</h3><p class="small muted" style="margin-top:6px">O navegador bloqueou o armazenamento. Verifique se não está em uma aba anônima.</p></div>`;
     return;
   }
+  aplicarTema(S.settings.tema);
   checkStale();
   if (!S.profile || !activePlan() && !Object.keys(S.plans).length) startOnboarding();
   else render();

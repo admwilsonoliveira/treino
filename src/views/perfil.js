@@ -5,6 +5,7 @@ import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, ageFrom, newId, restLabel, DIAS_
 import { requestPersist } from "../db.js";
 import { isNative, notifStatus, ensureNotifPermission, openExactAlarmSettings, testNotification } from "../native.js";
 import { APK_URL } from "../update.js";
+import { TEMAS, aplicarTema } from "../tema.js";
 import { nuvemPanelHtml } from "./nuvem.js";
 import { avaliacaoHtml, avaliacaoCardHtml } from "./avaliacao.js";
 
@@ -226,6 +227,12 @@ views.perfil = {
 
     h += lembretesHtml();
 
+    // aparência
+    const tm = S.settings.tema || "escuro";
+    h += `<h2>Aparência</h2><div class="panel"><div class="field" style="margin-top:0"><span class="lab">Tema</span>
+      <div class="scale" style="--n:3">${TEMAS.map(([v, l]) => `<button type="button" data-act="tema" data-v="${v}" aria-pressed="${v === tm}">${l}</button>`).join("")}</div>
+      <div class="help">O escuro é o padrão, pensado para os treinos cedo.</div></div></div>`;
+
     // backup
     h += nuvemPanelHtml();
     const ub = S.settings.ultimoBackup;
@@ -248,6 +255,7 @@ views.perfil = {
 };
 changes.restPadrao = el => { S.settings.restPadrao = parseInt(el.value, 10) || 60; flush("kv", "settings"); setStatus("Descanso padrão: " + restLabel(S.settings.restPadrao)); };
 actions.goPlano = () => go("treinos", "plano");
+actions.tema = el => { S.settings.tema = el.dataset.v; aplicarTema(S.settings.tema); flush("kv", "settings"); render(); };
 
 /* ---------- lembretes e alarmes (app Android) ---------- */
 function lembretesHtml(){
