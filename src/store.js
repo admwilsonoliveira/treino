@@ -11,7 +11,10 @@ export const S = {
   measurements: {},       // pesagens e bioimpedância
   plans: {},              // planos de treino
   exOverrides: {},        // exercícios criados pelo usuário e ajustes nos do banco (ex.: link de vídeo)
-  fotos: {}               // foto do aparelho de cada exercício: { id: exId, data, thumb, atualizado }
+  fotos: {},              // foto do aparelho de cada exercício: { id: exId, data, thumb, atualizado }
+  // módulo Saúde (só existe para quem ativou; ver saude.js)
+  saude: null,            // configuração e consentimento (kv "saude")
+  doses: {}, sintomas: {}, eventos: {}, fita: {}, exames: {}
 };
 
 export const DEFAULT_SETTINGS = { id: "settings", activePlanId: null, restPadrao: 60, walk: { ativo: true, km: 5, dias: [1, 2, 3, 4, 5], hora: "18:00" },
@@ -24,11 +27,16 @@ export const INATIVO_MS = 3 * 3600 * 1000; // treino sem atividade por 3 h é en
 
 // Descanso do exercício: o ajustado pelo usuário ou o padrão das configurações
 export const restOf = it => (it && it.rest > 0 ? it.rest : (S.settings && S.settings.restPadrao) || 60);
-export const BACKUP_VERSION = 1;
+// v2: backup passa a levar o módulo Saúde
+export const BACKUP_VERSION = 2;
 
 export async function loadAll(){
-  const [kv, sessions, measurements, plans, exercises, fotos] = await Promise.all(db.STORES.map(n => db.getAll(n)));
+  const all = await Promise.all(db.STORES.map(n => db.getAll(n)));
+  const by = Object.fromEntries(db.STORES.map((n, i) => [n, all[i] || []]));
+  const { kv, sessions, measurements, plans, exercises, fotos } = by;
   S.profile = kv.find(x => x.id === "profile") || null;
+  S.saude = kv.find(x => x.id === "saude") || null;
+  db.SAUDE_STORES.forEach(n => { S[n] = Object.fromEntries(by[n].map(x => [x.id, x])); });
   S.settings = Object.assign(clone(DEFAULT_SETTINGS), kv.find(x => x.id === "settings") || {});
   S.sessions = Object.fromEntries(sessions.map(x => [x.id, x]));
   S.measurements = Object.fromEntries(measurements.map(x => [x.id, x]));
@@ -104,10 +112,11 @@ export function imcClasse(v){
 }
 
 /* ---------- gravação ---------- */
-const MAP = { sessions: "sessions", measurements: "measurements", plans: "plans", exercises: "exOverrides", fotos: "fotos" };
+const MAP = { sessions: "sessions", measurements: "measurements", plans: "plans", exercises: "exOverrides", fotos: "fotos",
+  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames" };
 const timers = {}, chains = {};
 function objFor(store, id){
-  if (store === "kv") return id === "profile" ? S.profile : S.settings;
+  if (store === "kv") return id === "profile" ? S.profile : id === "saude" ? S.saude : S.settings;
   return S[MAP[store]][id];
 }
 export function save(store, id, delay = 600){
@@ -205,10 +214,11 @@ export function latestWeight(){
 export function exportData({ fotos = false } = {}){
   const d = {
     app: "treino-app", versao: BACKUP_VERSION, exportadoEm: new Date().toISOString(),
-    kv: [S.profile, S.settings].filter(Boolean),
+    kv: [S.profile, S.settings, S.saude].filter(Boolean),
     sessions: Object.values(S.sessions), measurements: Object.values(S.measurements),
     plans: Object.values(S.plans), exercises: Object.values(S.exOverrides)
   };
+  if (S.saude) db.SAUDE_STORES.forEach(n => { d[n] = Object.values(S[n]); });
   if (fotos) d.fotos = Object.values(S.fotos);
   return d;
 }
@@ -217,10 +227,26 @@ export function validateBackup(d){
   if (d.versao > BACKUP_VERSION) return "Este backup foi feito por uma versão mais nova do app. Atualize o app antes de restaurar.";
   return null;
 }
-export async function restoreData(d){
+// modo "substituir": o backup toma o lugar do que está no app; "mesclar": só acrescenta o que falta (pelo id)
+export async function restoreData(d, modo = "substituir"){
   await flushPending();
   const dados = { kv: d.kv || [], sessions: d.sessions || [], measurements: d.measurements || [], plans: d.plans || [], exercises: d.exercises || [] };
   if (Array.isArray(d.fotos)) dados.fotos = d.fotos; // só substitui as fotos se o backup trouxer fotos
-  await db.replaceAll(dados);
+  db.SAUDE_STORES.forEach(n => { if (Array.isArray(d[n])) dados[n] = d[n]; });
+  if (modo === "mesclar") await db.mergeAll(dados);
+  else {
+    // backup sem o módulo Saúde (feito antes dele existir) não apaga a saúde deste aparelho
+    if (S.saude && !dados.kv.some(x => x && x.id === "saude")) dados.kv = dados.kv.concat([S.saude]);
+    await db.replaceAll(dados);
+  }
   await loadAll();
+}
+// Números de referência para conferir que nada sumiu depois de atualizações e restaurações
+export function conferencia(){
+  const d = done(), treinos = d.filter(s => s.type === "treino");
+  return {
+    treinos: treinos.length, caminhadas: d.filter(s => s.type === "caminhada").length,
+    series: treinos.reduce((n, s) => n + Object.values(s.sets || {}).reduce((m, arr) => m + (arr || []).length, 0), 0),
+    pesagens: Object.keys(S.measurements).length
+  };
 }

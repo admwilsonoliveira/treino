@@ -1,11 +1,12 @@
 // Aba Perfil: dados do usuário, medidas corporais (peso e bioimpedância), plano ativo, caminhada e backup.
-import { S, save, flush, setStatus, measurementsList, latestWeight, activePlan, exportData, validateBackup, restoreData, imc, imcClasse, restOf } from "../store.js";
+import { S, save, flush, setStatus, measurementsList, latestWeight, activePlan, exportData, validateBackup, restoreData, imc, imcClasse, restOf, conferencia } from "../store.js";
 import { ui, views, actions, changes, render, go, openModal, closeModal, modalState } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, ageFrom, newId, restLabel, DIAS_CURTO, downloadBlob, $ } from "../util.js";
 import { requestPersist } from "../db.js";
 import { isNative, notifStatus, ensureNotifPermission, openExactAlarmSettings, testNotification } from "../native.js";
 import { APK_URL } from "../update.js";
 import { TEMAS, aplicarTema } from "../tema.js";
+import { saudePanelHtml, saudePanelAfter } from "./saude.js";
 import { nuvemPanelHtml } from "./nuvem.js";
 import { avaliacaoHtml, avaliacaoCardHtml } from "./avaliacao.js";
 
@@ -120,7 +121,10 @@ actions.saveMedida = el => {
   if (!date){ $("#md-err").textContent = "Informe a data."; return; }
   if (!(peso >= 30 && peso <= 300)){ $("#md-err").textContent = "Informe o peso em kg."; return; }
   const id = el.dataset.id || newId("m");
-  S.measurements[id] = Object.assign({ id, date, peso }, readBioFields());
+  // mantém os campos que este formulário não mostra (jejum, hora, fonte, marcações da importação)
+  const antes = Object.assign({}, S.measurements[id] || {});
+  MED_FIELDS.forEach(f => { delete antes[f.k]; });
+  S.measurements[id] = Object.assign(antes, { id, date, peso }, readBioFields());
   flush("measurements", id); closeModal(); render();
 };
 actions.delMedida = el => {
@@ -176,10 +180,19 @@ export async function onBackupFile(file){
   try{ d = JSON.parse(await file.text()); }catch(e){ alert("Não foi possível ler o arquivo. Escolha um arquivo .json de backup deste app."); return; }
   const err = validateBackup(d); if (err){ alert(err); return; }
   const n = d.sessions.length;
-  if (!confirm(`Restaurar este backup (${n} registro${n === 1 ? "" : "s"}, feito em ${ddmmyyyy((d.exportadoEm || "").slice(0, 10))})?\n\nTudo o que está no app agora será substituído.`)) return;
-  await restoreData(d);
-  setStatus("Backup restaurado"); go("hoje");
+  openModal(`<h3>Restaurar backup</h3>
+    <p class="small" style="margin-top:8px">Backup de ${ddmmyyyy((d.exportadoEm || "").slice(0, 10))} com ${n} registro${n === 1 ? "" : "s"} de treino e caminhada.</p>
+    <div class="infobox" style="margin-top:12px"><strong>Mesclar</strong> acrescenta só o que falta e não apaga nada do que está no app.<br><strong>Substituir tudo</strong> troca o que está no app pelo backup (use em celular novo).</div>
+    <div class="row" style="margin-top:20px"><button class="btn strength" data-act="restaurarModo" data-v="mesclar">Mesclar</button><button class="btn ghost" data-act="restaurarModo" data-v="substituir">Substituir tudo</button></div>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" data-act="closeModal">Cancelar</button></div>`, { backup: d });
 }
+actions.restaurarModo = async el => {
+  const d = modalState.backup, modo = el.dataset.v; if (!d) return;
+  if (modo === "substituir" && !confirm("Tudo o que está no app agora será substituído pelo backup. Continuar?")) return;
+  closeModal();
+  await restoreData(d, modo);
+  setStatus(modo === "mesclar" ? "Backup mesclado" : "Backup restaurado"); go("hoje");
+};
 
 /* ---------- view ---------- */
 views.perfil = {
@@ -233,6 +246,8 @@ views.perfil = {
       <div class="scale" style="--n:3">${TEMAS.map(([v, l]) => `<button type="button" data-act="tema" data-v="${v}" aria-pressed="${v === tm}">${l}</button>`).join("")}</div>
       <div class="help">O escuro é o padrão, pensado para os treinos cedo.</div></div></div>`;
 
+    h += saudePanelHtml();
+
     // backup
     h += nuvemPanelHtml();
     const ub = S.settings.ultimoBackup;
@@ -242,6 +257,13 @@ views.perfil = {
       <div class="row"><button class="btn strength" data-act="backupExport">Fazer backup</button><button class="btn ghost" data-act="backupImport">Restaurar backup</button></div>
       <input type="file" id="backupFile" accept="application/json,.json" hidden>
     </div>`;
+    const cf = conferencia();
+    h += `<h2>Conferência dos dados</h2><div class="panel"><div class="stats" style="margin-top:0;grid-template-columns:repeat(4,1fr)">
+      <div class="stat"><div class="v">${cf.treinos}</div><div class="l">treinos</div></div>
+      <div class="stat"><div class="v">${cf.caminhadas}</div><div class="l">caminhadas</div></div>
+      <div class="stat"><div class="v">${cf.series}</div><div class="l">séries</div></div>
+      <div class="stat"><div class="v">${cf.pesagens}</div><div class="l">pesagens</div></div>
+    </div><p class="small muted" style="margin:8px 0 0">Use para conferir que nada sumiu depois de uma atualização ou restauração.</p></div>`;
     h += `<p class="small muted" style="margin-top:18px">Este app é uma ferramenta de registro e não substitui a orientação de médico, fisioterapeuta ou educador físico.</p>
       <p class="small muted" style="margin-top:6px">Versão ${esc(typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev")}${isNative ? " · app Android" : ""}</p>`;
     return h;
@@ -249,6 +271,7 @@ views.perfil = {
   after(){
     if (ui.sub) return;
     fillPermStatus();
+    saudePanelAfter();
     const f = $("#backupFile");
     if (f) f.addEventListener("change", () => { if (f.files[0]) onBackupFile(f.files[0]); f.value = ""; });
   }

@@ -1,8 +1,10 @@
 // Armazenamento no aparelho (IndexedDB). Cada "store" guarda objetos com campo id.
 const DB_NAME = "treino-app";
 // v2: store "fotos" (foto do aparelho de cada exercício)
-const DB_VERSION = 2;
-export const STORES = ["kv", "sessions", "measurements", "plans", "exercises", "fotos"];
+// v3: stores do módulo Saúde (doses, sintomas, eventos, medidas com fita, exames) — só acréscimo
+const DB_VERSION = 3;
+export const SAUDE_STORES = ["doses", "sintomas", "eventos", "fita", "exames"];
+export const STORES = ["kv", "sessions", "measurements", "plans", "exercises", "fotos"].concat(SAUDE_STORES);
 
 let dbp = null;
 function open(){
@@ -40,6 +42,36 @@ export function replaceAll(data){
       const s = t.objectStore(n); s.clear();
       (data[n] || []).forEach(o => { if (o && o.id != null) s.put(o); });
     });
+    t.oncomplete = () => resolve();
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error);
+  }));
+}
+// Restauração "mesclar": só acrescenta o que ainda não existe (pelo id); nada é apagado nem sobrescrito
+export function mergeAll(data){
+  const alvo = STORES.filter(n => Array.isArray(data[n]) && data[n].length);
+  if (!alvo.length) return Promise.resolve(0);
+  return open().then(db => new Promise((resolve, reject) => {
+    const t = db.transaction(alvo, "readwrite");
+    let novos = 0;
+    alvo.forEach(n => {
+      const s = t.objectStore(n);
+      data[n].forEach(o => {
+        if (!o || o.id == null) return;
+        const r = s.getKey(o.id);
+        r.onsuccess = () => { if (r.result === undefined){ s.put(o); novos++; } };
+      });
+    });
+    t.oncomplete = () => resolve(novos);
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error);
+  }));
+}
+// Apaga por completo as stores indicadas (usado em "Apagar meus dados de saúde")
+export function clearStores(names){
+  return open().then(db => new Promise((resolve, reject) => {
+    const t = db.transaction(names, "readwrite");
+    names.forEach(n => t.objectStore(n).clear());
     t.oncomplete = () => resolve();
     t.onerror = () => reject(t.error);
     t.onabort = () => reject(t.error);
