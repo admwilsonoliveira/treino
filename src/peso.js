@@ -3,6 +3,7 @@
 import { S, measurementsList } from "./store.js";
 import { ymd, num } from "./util.js";
 import { addDias, diasAte, aplicadas } from "./medicacao.js";
+import { oficial, alertaPescoco } from "./fita.js";
 
 export const pesagens = () => measurementsList().filter(m => num(m.peso) != null);
 const hoje = () => ymd(new Date());
@@ -131,7 +132,7 @@ function cinturaVariacao(){
   const fs = Object.values(S.fita || {}).filter(f => f.jejum && f.leituras && f.leituras.cintura_umbigo).sort((a, b) => a.date.localeCompare(b.date));
   const rec = fs.filter(f => diasAte(f.date, hoje()) <= 35);
   if (rec.length < 2 || diasAte(rec[0].date, rec[rec.length - 1].date) < 14) return null;
-  const v = f => mediaDe(f.leituras.cintura_umbigo.map(num).filter(x => x != null), x => x);
+  const v = f => oficial(f.leituras.cintura_umbigo);
   return v(rec[rec.length - 1]) - v(rec[0]);
 }
 // nivel: "plato" | "desaceleracao" | "oscilacao" | "ok" | null (poucos dados)
@@ -158,5 +159,6 @@ export function alertasPeso(){
   if (u && diasAte(u.date, hoje()) > 7) out.push({ titulo: "Mais de 7 dias sem pesagem", msg: "Pausas longas na pesagem estão associadas a reganho. Um registro já ajuda." });
   const p = plato();
   if (p && (p.nivel === "plato" || p.nivel === "desaceleracao")) out.push({ titulo: p.titulo, msg: p.msg });
+  const pe = alertaPescoco(); if (pe) out.push(pe);
   return out;
 }

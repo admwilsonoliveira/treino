@@ -13,7 +13,7 @@ import { esc, num, fmtNum, ymd, mondayOf, DIAS, DIAS_CURTO } from "../util.js";
 // Alertas de resultado (peso parado, pausa na pesagem): no máximo 3 no total, os de segurança primeiro
 function resultadoHtml(){
   const livres = Math.max(0, 3 - alertasSeguranca().length);
-  return alertasPeso().slice(0, livres).map(a => `<div class="panel aviso" style="margin-bottom:12px"><strong>${esc(a.titulo)}</strong><p class="small" style="margin:4px 0 0">${esc(a.msg)}</p></div>`).join("");
+  return alertasPeso().slice(0, livres).map(a => `<div class="panel aviso" style="margin-bottom:12px"><strong>${esc(a.titulo)}</strong><p class="small" style="margin:4px 0 0">${esc(a.msg)}</p>${a.ok ? `<button class="linkbtn" data-act="${esc(a.ok)}">Entendi</button>` : ""}</div>`).join("");
 }
 
 views.hoje = {

@@ -221,6 +221,14 @@ th{color:var(--ink-2);font-weight:600}
 .expl p{margin:0 0 8px}
 .expl p:last-child{margin-bottom:0}
 /* saúde */
+.grupo{border-top:1px solid var(--line);margin-top:12px;padding-top:4px}
+.grupo summary{font-weight:700;padding:10px 0;cursor:pointer}
+.ponto{margin:6px 0 10px}
+.leit{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+.leit input{text-align:center;font-size:18px;font-weight:700;min-height:48px}
+.prog-cint{position:relative;height:14px;background:var(--surface-2);border-radius:99px;overflow:visible;margin-top:6px}
+.prog-cint i{display:block;height:100%;background:var(--strength);border-radius:99px}
+.prog-cint b{position:absolute;top:-3px;width:3px;height:20px;background:var(--walk);border-radius:2px;transform:translateX(-1px)}
 nav.tabs button.fab{align-self:center;justify-self:center;width:56px;min-height:56px;height:56px;margin-top:-22px;border-radius:18px;background:var(--strength);color:var(--strength-ink);font-size:32px;font-weight:500;line-height:1;padding:0;box-shadow:0 6px 16px rgba(0,0,0,.25)}
 .acoes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
 .acoes button{min-height:64px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);font-weight:700;font-size:15px}

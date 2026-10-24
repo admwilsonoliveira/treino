@@ -5,6 +5,8 @@ import { ui, views, actions, render, go, openModal, closeModal, modalState } fro
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, DIAS, $ } from "../util.js";
 import { saudeAtiva } from "../saude.js";
 import { pesoHtml, drawPeso } from "./peso.js";
+import { fitaHtml, drawFita } from "./fita.js";
+import { ultimoValor } from "../fita.js";
 import { mediaAtual, ritmo } from "../peso.js";
 import {
   MEDICAMENTOS, LOCAIS, STATUS_DOSE, nomeLocal, nomeMed, regrasTirzepatida, agenda, avisoIntervalo, sugerirLocal, dosesList, aplicadas,
@@ -55,13 +57,14 @@ views.saude = {
     if (!saudeAtiva()) return `<div class="panel"><h3>Saúde</h3><p class="small muted" style="margin-top:6px">Ative o acompanhamento de saúde em Perfil → Saúde.</p><button class="btn strength" data-act="goTab" data-tab="perfil" style="margin-top:10px">Ir para o Perfil</button></div>`;
     if (ui.sub === "medicacao") return medicacaoHtml();
     if (ui.sub === "peso") return pesoHtml();
+    if (ui.sub === "medidas") return fitaHtml();
     const tx = textoAgenda(agenda()), m = mediaAtual(), r = ritmo(4);
     return `<h2 style="margin-top:0">Saúde</h2>${alertasHtml()}
       <button class="panel hub" data-act="goMedicacao"><div><strong>Medicação</strong><div class="small muted">${esc(tx.t)}${tx.s ? " · " + esc(tx.s) : ""}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goPeso" style="margin-top:12px"><div><strong>Peso</strong><div class="small muted">${m != null ? `${fmtNum(m)} kg (média de 7 dias)${r != null ? " · " + (r > 0 ? "+" : r < 0 ? "−" : "") + fmtNum(Math.abs(r), 2) + " kg/semana" : ""}` : "Nenhuma pesagem ainda"}</div></div><span aria-hidden="true">›</span></button>
-      <div class="panel" style="margin-top:12px"><strong>Medidas com fita</strong><div class="small muted">Chegam na próxima atualização.</div></div>`;
+      <button class="panel hub" data-act="goMedidas" style="margin-top:12px"><div><strong>Medidas com fita</strong><div class="small muted">${(c => c ? `Cintura ${fmtNum(c.v)} cm em ${ddmm(c.date)}` : "Nenhuma medida em jejum ainda")(ultimoValor("cintura_umbigo"))}</div></div><span aria-hidden="true">›</span></button>`;
   },
-  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); }
+  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); if (ui.sub === "medidas") drawFita(); }
 };
 
 function medicacaoHtml(){
