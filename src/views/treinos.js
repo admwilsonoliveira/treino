@@ -81,7 +81,7 @@ actions.openTreino = el => { ui.treino = el.dataset.t; go("treinos"); };
 /* ---------- treino em andamento ---------- */
 function viewAtivo(s){
   const info = semanaInfo(planoDaSessao(s), new Date(s.start));
-  let h = `<div class="panel live"><div class="today-head"><div class="big-letter">${esc(s.treino)}</div><div style="flex:1"><h3>Treino ${esc(s.treino)} em andamento</h3><div class="elapsed" data-since="${esc(s.start)}">0:00</div><div class="small muted">Check-in: ${dorLabel().toLowerCase()} ${s.pre && s.pre.dor != null ? s.pre.dor : "–"}/10, energia ${s.pre && s.pre.energia ? s.pre.energia : "–"}/5</div></div></div>${semanaHtml(info)}</div>`;
+  let h = `<div class="panel live"><div class="today-head"><div class="big-letter">${esc(s.treino)}</div><div style="flex:1"><h3>Treino ${esc(s.treino)} em andamento</h3><div class="elapsed" data-since="${esc(s.start)}">0:00</div><div class="small" data-aviso70="${esc(s.start)}" hidden style="color:var(--walk);font-weight:600">Passou de 70 min. Em déficit, 60 a 70 min rendem mais.</div><div class="small muted">Check-in: ${dorLabel().toLowerCase()} ${s.pre && s.pre.dor != null ? s.pre.dor : "–"}/10, energia ${s.pre && s.pre.energia ? s.pre.energia : "–"}/5</div></div></div>${semanaHtml(info)}</div>`;
   const wu = s.warmup || [], items = s.plano.warmup || [];
   if (items.length){
     h += `<h2>Aquecimento</h2><div class="panel warm"><ul>`;

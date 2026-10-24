@@ -71,6 +71,10 @@ actions.edSave = () => {
   if (fim <= ini) fim = new Date(fim.getTime() + 86400000); // terminou depois da meia-noite
   if (fim - ini > 6 * 3600000){ $("#ed-err").textContent = "Duração acima de 6 horas: confira os horários."; return; }
   if (s.type === "caminhada" && !(s.km > 0)){ $("#ed-err").textContent = "Informe a distância em km."; return; }
+  // correção de registro: guarda uma vez o valor original de horário, km e calorias (auditoria)
+  const orig = S.sessions[s.id];
+  if (orig && !s.valorOriginal && (orig.start !== ini.toISOString() || orig.end !== fim.toISOString() || (orig.km != null && orig.km !== s.km)))
+    s.valorOriginal = { start: orig.start, end: orig.end, km: orig.km != null ? orig.km : null, kcal: orig.kcal != null ? orig.kcal : null, em: new Date().toISOString() };
   s.start = ini.toISOString(); s.end = fim.toISOString();
   // remove séries totalmente vazias
   Object.keys(s.sets || {}).forEach(id => { s.sets[id] = s.sets[id].filter(x => num(x.kg) != null || num(x.reps) != null); });

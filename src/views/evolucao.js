@@ -6,6 +6,7 @@ import { esc, num, fmtNum, ddmm, ddmmyyyy, durMin, timeOf, ymd, pad, mondayOf, d
 import { setsSummary } from "./treinos.js";
 import { relatorioHtml } from "./relatorio.js";
 import { editarHtml, abrirEdicao } from "./editar.js";
+import { forcaHtml, drawForca } from "./forca.js";
 
 Chart.register(LineController, LineElement, PointElement, BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend);
 
@@ -25,8 +26,9 @@ views.evolucao = {
   html(){
     if (ui.sub === "editar") return editarHtml();
     const v = ui.evoView;
-    let h = `<div class="toggle" role="group" aria-label="Visão" style="margin-top:0">${[["cargas", "Cargas"], ["corpo", "Corpo"], ["calorias", "Calorias"], ["dor", "Dor"], ["registros", "Registros"], ["relatorio", "Relatório"]].map(([k, t]) => `<button type="button" data-act="evoView" data-v="${k}" aria-pressed="${v === k}">${t}</button>`).join("")}</div>`;
+    let h = `<div class="toggle" role="group" aria-label="Visão" style="margin-top:0">${[["cargas", "Cargas"], ["forca", "Força"], ["corpo", "Corpo"], ["calorias", "Calorias"], ["dor", "Dor"], ["registros", "Registros"], ["relatorio", "Relatório"]].map(([k, t]) => `<button type="button" data-act="evoView" data-v="${k}" aria-pressed="${v === k}">${t}</button>`).join("")}</div>`;
     if (v === "cargas") h += cargasHtml();
+    else if (v === "forca") h += forcaHtml();
     else if (v === "corpo") h += corpoHtml();
     else if (v === "calorias") h += caloriasHtml();
     else if (v === "dor") h += dorHtml();
@@ -34,7 +36,7 @@ views.evolucao = {
     else h += registrosHtml();
     return h;
   },
-  after(){ if (!ui.sub) drawCharts(); }
+  after(){ if (!ui.sub){ if (ui.evoView === "forca") drawForca(); else drawCharts(); } }
 };
 actions.evoView = el => { ui.evoView = el.dataset.v; render(); };
 actions.edOpen = el => abrirEdicao(el.dataset.id);

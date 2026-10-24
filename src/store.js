@@ -56,7 +56,14 @@ function migrate(){
       if (s.status === "andamento" && s.plano){ s.plano.ex.forEach(it => { delete it.rest; }); flush("sessions", s.id); }
     });
   }
-  if (v < 2){ S.settings.dataVersion = 2; if (S.profile) flush("kv", "settings"); }
+  if (v < 3){
+    // v3: calorias da musculação recalculadas com 2,8 MET; o valor antigo fica guardado
+    Object.values(S.sessions).forEach(s => {
+      if (s.type !== "treino" || s.kcal == null || s.kcalOriginal != null) return;
+      s.kcalOriginal = s.kcal; s.kcal = kcalOf(s); flush("sessions", s.id);
+    });
+  }
+  if (v < 3){ S.settings.dataVersion = 3; if (S.profile) flush("kv", "settings"); }
 }
 
 /* ---------- treino esquecido ---------- */
@@ -76,7 +83,9 @@ export function weightAt(date){
   const before = ms.filter(m => m.date <= date).pop();
   return before ? num(before.peso) : (ms[0] ? num(ms[0].peso) : (S.profile ? num(S.profile.pesoInicial) : null));
 }
-// Compêndio de Atividades Físicas: musculação moderada ≈ 3,5 MET; caminhada conforme a velocidade
+// Compêndio de Atividades Físicas: caminhada conforme a velocidade. Musculação: 2,8 MET (desde 24/10/2026;
+// antes 3,5, que superestimava treinos com descansos longos — o valor antigo fica em s.kcalOriginal)
+export const MUSC_MET = 2.8;
 const WALK_MET = [[3.2, 2.8], [4.0, 3.0], [4.8, 3.5], [5.6, 4.3], [6.4, 5.0], [7.2, 7.0]];
 export function walkMet(kmh){
   if (!(kmh > 0)) return 3.5;
@@ -91,7 +100,7 @@ export function kcalOf(s){
   if (!s.end || !s.start) return null;
   const h = (new Date(s.end) - new Date(s.start)) / 3600000, kg = weightAt(s.date);
   if (!(h > 0) || !kg) return null;
-  const met = s.type === "caminhada" ? walkMet(num(s.km) / h) : 3.5;
+  const met = s.type === "caminhada" ? walkMet(num(s.km) / h) : MUSC_MET;
   return Math.round(met * kg * Math.min(h, 4));
 }
 export const kcalFor = s => (s.kcal != null ? s.kcal : kcalOf(s));
@@ -100,7 +109,7 @@ export function kcalLiquidaOf(s){
   if (!s.end || !s.start) return null;
   const h = (new Date(s.end) - new Date(s.start)) / 3600000, kg = weightAt(s.date);
   if (!(h > 0) || !kg) return null;
-  const met = s.type === "caminhada" ? walkMet(num(s.km) / h) : 3.5;
+  const met = s.type === "caminhada" ? walkMet(num(s.km) / h) : MUSC_MET;
   return Math.round((met - 1) * kg * Math.min(h, 4));
 }
 

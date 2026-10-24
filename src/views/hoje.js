@@ -4,6 +4,8 @@ import { ui, views } from "../ui.js";
 import { remoteBannerHtml } from "./nuvem.js";
 import { alertasHtml, medicacaoCardHtml } from "./medicacao.js";
 import { pesoCardHtml } from "./peso.js";
+import { forcaCardHtml } from "./forca.js";
+import { alertaForca, alertaDuracao } from "../forca.js";
 import { alertasPeso } from "../peso.js";
 import { alertasSeguranca } from "../medicacao.js";
 import { semanaInfo } from "../programa.js";
@@ -13,7 +15,7 @@ import { esc, num, fmtNum, ymd, mondayOf, DIAS, DIAS_CURTO } from "../util.js";
 // Alertas de resultado (peso parado, pausa na pesagem): no máximo 3 no total, os de segurança primeiro
 function resultadoHtml(){
   const livres = Math.max(0, 3 - alertasSeguranca().length);
-  return alertasPeso().slice(0, livres).map(a => `<div class="panel aviso" style="margin-bottom:12px"><strong>${esc(a.titulo)}</strong><p class="small" style="margin:4px 0 0">${esc(a.msg)}</p>${a.ok ? `<button class="linkbtn" data-act="${esc(a.ok)}">Entendi</button>` : ""}</div>`).join("");
+  return alertasPeso().concat([alertaForca(), alertaDuracao()].filter(Boolean)).slice(0, livres).map(a => `<div class="panel aviso" style="margin-bottom:12px"><strong>${esc(a.titulo)}</strong><p class="small" style="margin:4px 0 0">${esc(a.msg)}</p>${a.ok ? `<button class="linkbtn" data-act="${esc(a.ok)}">Entendi</button>` : ""}</div>`).join("");
 }
 
 views.hoje = {
@@ -47,7 +49,7 @@ views.hoje = {
     else if (t && !at && !tDone) h += `<button class="btn strength" data-act="openTreino" data-t="${t}">Abrir treino ${t}</button>`;
     if (!aw) h += `<button class="btn ${t && !tDone ? "ghost" : "walk"}" data-act="startWalk">Iniciar caminhada</button>`;
     h += `</div></div>`;
-    h += medicacaoCardHtml() + (S.saude && S.saude.ativo ? pesoCardHtml() : "");
+    h += medicacaoCardHtml() + (S.saude && S.saude.ativo ? pesoCardHtml() : "") + forcaCardHtml();
 
     // semana
     const mon = mondayOf(d), nTreinos = p ? new Set(planLetters(p).flatMap(L => p.treinos[L].dias || [])).size : 0;

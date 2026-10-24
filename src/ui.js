@@ -95,6 +95,8 @@ actions.closeModal = () => closeModal();
 /* ---------- relógios ---------- */
 export function tick(){
   document.querySelectorAll("[data-since]").forEach(el => { el.textContent = dur(Date.now() - new Date(el.dataset.since).getTime()); });
+  // treino passando de 70 min: aviso discreto
+  document.querySelectorAll("[data-aviso70]").forEach(el => { el.hidden = Date.now() - new Date(el.dataset.aviso70).getTime() < 70 * 60000; });
 }
 setInterval(tick, 1000);
 
