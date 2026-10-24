@@ -1,0 +1,747 @@
+{
+"taco": [
+[
+1,
+"Rice, brown, long-grain, cooked (Includes foods for USDA's Food Distribution Program)"
+],
+[
+3,
+"Rice, white, long-grain, regular, enriched, cooked"
+],
+[
+7,
+"Cereals, oats, regular and quick, not fortified, dry"
+],
+[
+52,
+"Bread, whole-wheat, commercially prepared"
+],
+[
+53,
+"Bread, french or vienna (includes sourdough)"
+],
+[
+40,
+"Pasta, dry, enriched"
+],
+[
+43,
+"Cornmeal, whole-grain, yellow"
+],
+[
+35,
+"Wheat flour, white, all-purpose, enriched, bleached"
+],
+[
+61,
+"Snacks, popcorn, oil-popped, microwave, regular flavor, no trans fat"
+],
+[
+124,
+"Tapioca, pearl, dry"
+],
+[
+65,
+"Squash, winter, butternut, raw"
+],
+[
+64,
+"Squash, winter, butternut, cooked, baked, without salt"
+],
+[
+71,
+"Squash, summer, zucchini, includes skin, raw"
+],
+[
+70,
+"Squash, summer, zucchini, includes skin, cooked, boiled, drained, without salt"
+],
+[
+74,
+"Chard, swiss, raw"
+],
+[
+75,
+"Watercress, raw"
+],
+[
+77,
+"Lettuce, iceberg (includes crisphead types), raw"
+],
+[
+78,
+"Lettuce, green leaf, raw"
+],
+[
+80,
+"Lettuce, red leaf, raw"
+],
+[
+82,
+"Garlic, raw"
+],
+[
+88,
+"Sweet potato, cooked, boiled, without skin"
+],
+[
+89,
+"Sweet potato, raw, unprepared (Includes foods for USDA's Food Distribution Program)"
+],
+[
+91,
+"Potatoes, boiled, cooked without skin, flesh, without salt"
+],
+[
+92,
+"Potatoes, flesh and skin, raw"
+],
+[
+96,
+"Eggplant, raw"
+],
+[
+95,
+"Eggplant, cooked, boiled, drained, without salt"
+],
+[
+97,
+"Beets, cooked, boiled, drained"
+],
+[
+98,
+"Beets, raw"
+],
+[
+100,
+"Broccoli, cooked, boiled, drained, without salt"
+],
+[
+101,
+"Broccoli, raw"
+],
+[
+107,
+"Onions, raw"
+],
+[
+110,
+"Carrots, raw"
+],
+[
+109,
+"Carrots, cooked, boiled, drained, without salt"
+],
+[
+113,
+"Chayote, fruit, raw"
+],
+[
+112,
+"Chayote, fruit, cooked, boiled, drained, without salt"
+],
+[
+115,
+"Collards, raw"
+],
+[
+116,
+"Collards, cooked, boiled, drained, without salt"
+],
+[
+117,
+"Cauliflower, raw"
+],
+[
+118,
+"Cauliflower, cooked, boiled, drained, without salt"
+],
+[
+119,
+"Spinach, raw"
+],
+[
+120,
+"Spinach, cooked, boiled, drained, without salt"
+],
+[
+130,
+"Cassava, raw"
+],
+[
+142,
+"Cucumber, with peel, raw"
+],
+[
+144,
+"Peppers, sweet, green, raw"
+],
+[
+145,
+"Peppers, sweet, red, raw"
+],
+[
+143,
+"Peppers, sweet, yellow, raw"
+],
+[
+147,
+"Okra, raw"
+],
+[
+149,
+"Cabbage, raw"
+],
+[
+150,
+"Cabbage, red, raw"
+],
+[
+152,
+"Arugula, raw"
+],
+[
+157,
+"Tomatoes, red, ripe, raw, year round average"
+],
+[
+162,
+"Beans, snap, green, raw"
+],
+[
+160,
+"Tomato products, canned, puree, without salt added"
+],
+[
+148,
+"Radishes, raw"
+],
+[
+153,
+"Parsley, fresh"
+],
+[
+108,
+"Onions, spring or scallions (includes tops and bulb), raw"
+],
+[
+163,
+"Avocados, raw, all commercial varieties"
+],
+[
+164,
+"Pineapple, raw, all varieties"
+],
+[
+169,
+"Acerola, (west indian cherry), raw"
+],
+[
+179,
+"Bananas, raw"
+],
+[
+182,
+"Bananas, raw"
+],
+[
+178,
+"Bananas, raw"
+],
+[
+197,
+"Guavas, common, raw"
+],
+[
+200,
+"Guavas, common, raw"
+],
+[
+207,
+"Kiwifruit, green, raw"
+],
+[
+214,
+"Oranges, raw, all commercial varieties"
+],
+[
+215,
+"Orange juice, raw (Includes foods for USDA's Food Distribution Program)"
+],
+[
+220,
+"Limes, raw"
+],
+[
+222,
+"Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)"
+],
+[
+221,
+"Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)"
+],
+[
+225,
+"Papayas, raw"
+],
+[
+226,
+"Papayas, raw"
+],
+[
+231,
+"Mangos, raw"
+],
+[
+228,
+"Mangos, raw"
+],
+[
+232,
+"Passion-fruit, (granadilla), purple, raw"
+],
+[
+235,
+"Watermelon, raw"
+],
+[
+236,
+"Melons, cantaloupe, raw"
+],
+[
+239,
+"Strawberries, raw"
+],
+[
+243,
+"Pears, raw"
+],
+[
+244,
+"Peaches, yellow, raw"
+],
+[
+251,
+"Tangerines, (mandarin oranges), raw"
+],
+[
+238,
+"Tangerines, (mandarin oranges), raw"
+],
+[
+256,
+"Grapes, red or green (European type, such as Thompson seedless), raw"
+],
+[
+172,
+"Plums, raw"
+],
+[
+194,
+"Figs, raw"
+],
+[
+249,
+"Pomegranates, raw"
+],
+[
+260,
+"Oil, olive, salad or cooking"
+],
+[
+261,
+"Butter, salted"
+],
+[
+262,
+"Butter, without salt"
+],
+[
+268,
+"Oil, canola"
+],
+[
+272,
+"Oil, soybean, salad or cooking"
+],
+[
+269,
+"Oil, sunflower, linoleic, (approx. 65%)"
+],
+[
+277,
+"Fish, tuna, light, canned in oil, drained solids"
+],
+[
+278,
+"Fish, tuna, fresh, yellowfin, raw"
+],
+[
+279,
+"Fish, cod, Atlantic, dried and salted"
+],
+[
+285,
+"Crustaceans, shrimp, raw"
+],
+[
+284,
+"Crustaceans, shrimp, cooked"
+],
+[
+316,
+"Fish, salmon, Atlantic, farmed, raw"
+],
+[
+317,
+"Fish, salmon, Atlantic, farmed, cooked, dry heat"
+],
+[
+315,
+"Fish, salmon, Atlantic, farmed, cooked, dry heat"
+],
+[
+319,
+"Fish, sardine, Atlantic, canned in oil, drained solids with bone"
+],
+[
+275,
+"Fish, pollock, Alaska, raw"
+],
+[
+276,
+"Fish, pollock, Alaska, cooked, dry heat (may contain additives to retain moisture)"
+],
+[
+327,
+"Beef, ground, 85% lean meat / 15% fat, raw (Includes foods for USDA's Food Distribution Program)"
+],
+[
+326,
+"Beef, ground, 85% lean meat / 15% fat, crumbles, cooked, pan-browned"
+],
+[
+345,
+"Beef, short loin, top loin steak, separable lean only, trimmed to 1/8\" fat, all grades, raw"
+],
+[
+346,
+"Beef, short loin, top loin, steak, separable lean only, trimmed to 1/8\" fat, all grades, cooked, broiled"
+],
+[
+352,
+"Beef, round, top round steak, boneless, separable lean only, trimmed to 0\" fat, select, raw"
+],
+[
+351,
+"Beef, round, top round, separable lean only, trimmed to 0\" fat, select, cooked, braised"
+],
+[
+376,
+"Beef, round, eye of round roast, boneless, separable lean only, trimmed to 0\" fat, select, raw"
+],
+[
+377,
+"Beef, round, eye of round roast, boneless, separable lean only, trimmed to 0\" fat, select, cooked, roasted"
+],
+[
+357,
+"Beef, tenderloin, steak, separable lean only, trimmed to 1/8\" fat, all grades, raw"
+],
+[
+358,
+"Beef, tenderloin, steak, separable lean only, trimmed to 1/8\" fat, all grades, cooked, broiled"
+],
+[
+355,
+"Beef, variety meats and by-products, liver, raw"
+],
+[
+356,
+"Beef, variety meats and by-products, liver, cooked, pan-fried"
+],
+[
+372,
+"Beef, shank crosscuts, separable lean only, trimmed to 1/4\" fat, choice, raw"
+],
+[
+371,
+"Beef, shank crosscuts, separable lean only, trimmed to 1/4\" fat, choice, cooked, simmered"
+],
+[
+409,
+"Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw"
+],
+[
+408,
+"Chicken, broilers or fryers, breast, meat only, cooked, roasted"
+],
+[
+410,
+"Chicken, broilers or fryers, breast, meat only, cooked, roasted"
+],
+[
+399,
+"Chicken, broilers or fryers, dark meat, thigh, meat only, raw"
+],
+[
+398,
+"Chicken, broilers or fryers, dark meat, thigh, meat only, cooked, braised"
+],
+[
+405,
+"Chicken, broilers or fryers, meat only, raw"
+],
+[
+403,
+"Chicken, broilers or fryers, meat only, cooked, roasted"
+],
+[
+400,
+"Chicken, liver, all classes, raw"
+],
+[
+426,
+"Turkey, whole, meat only, raw"
+],
+[
+425,
+"Turkey, whole, meat only, cooked, roasted"
+],
+[
+433,
+"Pork, fresh, loin, whole, separable lean only, raw"
+],
+[
+432,
+"Pork, fresh, loin, whole, separable lean only, cooked, roasted"
+],
+[
+436,
+"Pork, fresh, leg (ham), whole, separable lean only, raw"
+],
+[
+435,
+"Pork, fresh, leg (ham), whole, separable lean only, cooked, roasted"
+],
+[
+439,
+"Ham, sliced, regular (approximately 11% fat)"
+],
+[
+448,
+"Yogurt, plain, whole milk"
+],
+[
+449,
+"Yogurt, plain, skim milk"
+],
+[
+457,
+"Milk, nonfat, fluid, without added vitamin A and vitamin D (fat free or skim)"
+],
+[
+458,
+"Milk, whole, 3.25% milkfat, without added vitamin A and vitamin D"
+],
+[
+461,
+"Cheese, fresh, queso fresco"
+],
+[
+463,
+"Cheese, mozzarella, whole milk"
+],
+[
+464,
+"Cheese, parmesan, hard"
+],
+[
+469,
+"Cheese, ricotta, whole milk"
+],
+[
+489,
+"Egg, whole, raw, fresh"
+],
+[
+488,
+"Egg, whole, cooked, hard-boiled"
+],
+[
+490,
+"Egg, whole, cooked, fried"
+],
+[
+486,
+"Egg, white, raw, fresh"
+],
+[
+487,
+"Egg, yolk, raw, fresh"
+],
+[
+485,
+"Egg, quail, whole, fresh, raw"
+],
+[
+561,
+"Beans, pinto, mature seeds, cooked, boiled, without salt"
+],
+[
+562,
+"Beans, pinto, mature seeds, raw (Includes foods for USDA's Food Distribution Program)"
+],
+[
+567,
+"Beans, black, mature seeds, cooked, boiled, without salt"
+],
+[
+568,
+"Beans, black, mature seeds, raw"
+],
+[
+563,
+"Cowpeas, common (blackeyes, crowder, southern), mature seeds, cooked, boiled, without salt"
+],
+[
+577,
+"Lentils, mature seeds, cooked, boiled, without salt"
+],
+[
+578,
+"Lentils, raw"
+],
+[
+575,
+"Chickpeas (garbanzo beans, bengal gram), mature seeds, raw"
+],
+[
+557,
+"Peanuts, all types, raw"
+],
+[
+558,
+"Peanuts, all types, dry-roasted, with salt"
+],
+[
+584,
+"Tofu, raw, regular, prepared with calcium sulfate"
+],
+[
+560,
+"Peas, green (includes baby and lesuer types), canned, drained solids, unprepared"
+],
+[
+587,
+"Nuts, almonds, dry roasted, with salt added"
+],
+[
+588,
+"Nuts, cashew nuts, dry roasted, with salt added"
+],
+[
+589,
+"Nuts, brazilnuts, dried, unblanched"
+],
+[
+590,
+"Nuts, coconut meat, raw"
+],
+[
+593,
+"Seeds, sesame seeds, whole, dried"
+],
+[
+594,
+"Seeds, flaxseed"
+],
+[
+597,
+"Nuts, walnuts, english"
+],
+[
+507,
+"Honey"
+],
+[
+471,
+"Beverages, coffee, brewed, prepared with tap water"
+],
+[
+477,
+"Beverages, tea, black, brewed, prepared with tap water"
+],
+[
+478,
+"Nuts, coconut water (liquid from coconuts)"
+],
+[
+495,
+"Candies, milk chocolate"
+],
+[
+498,
+"Candies, semisweet chocolate"
+],
+[
+520,
+"Olives, ripe, canned (small-extra large)"
+],
+[
+521,
+"Olives, pickled, canned or bottled, green"
+],
+[
+494,
+"Sugars, granulated"
+]
+],
+"usdaSo": [
+[
+"Atum em lata, ao natural (em água), drenado",
+"Fish, tuna, light, canned in water, drained solids (Includes foods for USDA's Food Distribution Program)",
+"Pescados e frutos do mar"
+],
+[
+"Chia, semente",
+"Seeds, chia seeds, dried",
+"Nozes e sementes"
+],
+[
+"Pasta de amendoim, sem sal",
+"Peanut butter, smooth style, without salt",
+"Leguminosas e derivados"
+],
+[
+"Queijo cottage, light (2% gordura)",
+"Cheese, cottage, lowfat, 2% milkfat",
+"Leite e derivados"
+],
+[
+"Iogurte grego, natural, desnatado",
+"Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)",
+"Leite e derivados"
+],
+[
+"Quinoa, cozida",
+"Quinoa, cooked",
+"Cereais e derivados"
+],
+[
+"Aveia, farelo, cru",
+"Oat bran, raw",
+"Cereais e derivados"
+],
+[
+"Batata-doce, assada com casca",
+"Sweet potato, cooked, baked in skin, flesh, without salt",
+"Verduras, hortaliças e derivados"
+],
+[
+"Mirtilo (blueberry), cru",
+"Blueberries, raw",
+"Frutas e derivados"
+]
+]
+}
