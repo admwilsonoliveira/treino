@@ -8,6 +8,7 @@ import { pesoHtml, drawPeso } from "./peso.js";
 import { fitaHtml, drawFita } from "./fita.js";
 import { dobrasHtml, drawDobras, dobrasResumo } from "./dobras.js";
 import { metodosHtml, drawMetodos } from "./metodos.js";
+import { progressoHtml, sessoesFotos } from "./progresso.js";
 import { ultimoValor } from "../fita.js";
 import { mediaAtual, ritmo } from "../peso.js";
 import {
@@ -62,10 +63,12 @@ views.saude = {
     if (ui.sub === "medidas") return fitaHtml();
     if (ui.sub === "dobras") return dobrasHtml();
     if (ui.sub === "metodos") return metodosHtml();
+    if (ui.sub === "fotos") return progressoHtml();
     const tx = textoAgenda(agenda()), m = mediaAtual(), r = ritmo(4);
     return `<h2 style="margin-top:0">Saúde</h2>${alertasHtml()}
       <button class="panel hub" data-act="goMedicacao"><div><strong>Medicação</strong><div class="small muted">${esc(tx.t)}${tx.s ? " · " + esc(tx.s) : ""}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goPeso" style="margin-top:12px"><div><strong>Peso</strong><div class="small muted">${m != null ? `${fmtNum(m)} kg (média de 7 dias)${r != null ? " · " + (r > 0 ? "+" : r < 0 ? "−" : "") + fmtNum(Math.abs(r), 2) + " kg/semana" : ""}` : "Nenhuma pesagem ainda"}</div></div><span aria-hidden="true">›</span></button>
+      <button class="panel hub" data-act="goFotos" style="margin-top:12px"><div><strong>Fotos de progresso</strong><div class="small muted">${(n => n ? `Última sessão em ${ddmm(n.date)} · só neste celular` : "Frente, lado e costas, uma vez por mês")(sessoesFotos().pop())}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goMetodos" style="margin-top:12px"><div><strong>Comparar métodos</strong><div class="small muted">Gordura e massa magra: relógio, fita e dobras</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goRelCompleto" style="margin-top:12px"><div><strong>Relatório completo</strong><div class="small muted">12 meses, para a IA ou o médico</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goDobras" style="margin-top:12px"><div><strong>Dobras cutâneas</strong><div class="small muted">${esc(dobrasResumo() || "Nenhuma medida ainda")}</div></div><span aria-hidden="true">›</span></button>

@@ -8,6 +8,7 @@ import { semanaInfo, seriesNaSemana } from "../programa.js";
 import { sugestao } from "../progressao.js";
 import { fotoHtml } from "./fotos.js";
 import { dorExHtml, DOR_MIN, limpa } from "./dorex.js";
+import { baixarPlano } from "../planoexport.js";
 import { semanaHtml as organizarSemanaHtml } from "./semana.js";
 
 // Faixa da semana do programa de 12 semanas (deload em destaque)
@@ -54,7 +55,7 @@ views.treinos = {
     const Ls = planLetters(p);
     if (!ui.treino || !p.treinos[ui.treino]) ui.treino = treinoForDay(p, new Date().getDay()) || Ls[0];
     const L = ui.treino, t = p.treinos[L];
-    let h = `<div class="between" style="margin-bottom:10px"><div class="small muted">${esc(p.nome)}</div><div class="row" style="gap:14px"><button class="linkbtn" data-act="goSemana">Semana</button><button class="linkbtn" data-act="goPlanos2">Planos</button><button class="linkbtn" data-act="goEditor">Editar plano</button></div></div>`;
+    let h = `<div class="between" style="margin-bottom:10px"><div class="small muted">${esc(p.nome)}</div><div class="row" style="gap:14px"><button class="linkbtn" data-act="goSemana">Semana</button><button class="linkbtn" data-act="goPlanos2">Planos</button><button class="linkbtn" data-act="goEditor">Editar plano</button><button class="linkbtn" data-act="planoExportar">Exportar</button></div></div>`;
     h += `<div class="seg" role="group" aria-label="Escolha o treino" style="--n:${Ls.length}">`;
     Ls.forEach(k => { h += `<button type="button" data-act="pickTreino" data-t="${k}" aria-pressed="${k === L}">${k}<span>${(p.treinos[k].dias || []).map(d => ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][d]).join(", ") || "livre"}</span></button>`; });
     h += `</div>`;
@@ -201,6 +202,20 @@ actions.confirmFinishTreino = () => {
   closeModal(); flush("sessions", s.id); stopRest();
   go("hoje");
   setStatus(s.post.irradiada ? "Treino salvo. Procure avaliação pela dor na perna." : s.post.dorAguda ? "Treino salvo. Observe a dor e procure avaliação se continuar." : "Treino concluído" + (s.kcal ? ` · cerca de ${s.kcal} kcal` : ""));
+};
+
+/* ---------- exportar o plano (lista de exercícios de cada treino) ---------- */
+actions.planoExportar = () => openModal(`<h3>Exportar o plano de treino</h3>
+  <p class="small muted" style="margin-top:6px">Cada treino com a lista de exercícios, séries × repetições, RIR, descanso, dias e nota de técnica.</p>
+  <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="pe-hist" checked style="width:20px;height:20px;accent-color:var(--strength)"> Incluir a última carga e o 1RM estimado de cada exercício</label>
+  <div class="row" style="margin-top:16px"><button class="btn strength" data-act="planoBaixar" data-v="pdf">PDF (para imprimir)</button><button class="btn ghost" data-act="planoBaixar" data-v="md">Markdown (IA ou professor)</button></div>
+  <div class="row" style="margin-top:10px"><button class="btn ghost block" data-act="closeModal">Fechar</button></div>`);
+actions.planoBaixar = async el => {
+  const historico = !!($("#pe-hist") && $("#pe-hist").checked);
+  el.disabled = true; setStatus("Gerando…");
+  try{ await baixarPlano(el.dataset.v, { historico }); setStatus("Plano exportado"); closeModal(); }
+  catch(e){ setStatus(""); alert("Não foi possível exportar o plano.\n\n" + (e.message || e)); }
+  finally{ el.disabled = false; }
 };
 
 /* ---------- séries ---------- */

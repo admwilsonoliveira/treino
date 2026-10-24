@@ -5,10 +5,10 @@ import { actions, openModal, closeModal, rerenderKeepScroll } from "../ui.js";
 import { esc } from "../util.js";
 import { isNative } from "../native.js";
 
-function carregarImagem(src){
+export function carregarImagem(src){
   return new Promise((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = erro; i.src = src; });
 }
-function reduzir(img, max, qualidade){
+export function reduzir(img, max, qualidade){
   const f = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
   const c = document.createElement("canvas");
   c.width = Math.round(img.naturalWidth * f); c.height = Math.round(img.naturalHeight * f);
@@ -16,12 +16,12 @@ function reduzir(img, max, qualidade){
   return c.toDataURL("image/jpeg", qualidade);
 }
 // Abre a câmera (ou a galeria) e devolve a foto como data URL
-async function capturar(){
+export async function capturar(titulo = "Foto do aparelho"){
   if (isNative){
     const { Camera } = await import("@capacitor/camera");
     const r = await Camera.getPhoto({
       resultType: "dataUrl", source: "PROMPT", quality: 80, width: 1200, correctOrientation: true,
-      promptLabelHeader: "Foto do aparelho", promptLabelPhoto: "Escolher da galeria", promptLabelPicture: "Tirar foto", promptLabelCancel: "Cancelar"
+      promptLabelHeader: titulo, promptLabelPhoto: "Escolher da galeria", promptLabelPicture: "Tirar foto", promptLabelCancel: "Cancelar"
     });
     return r.dataUrl;
   }

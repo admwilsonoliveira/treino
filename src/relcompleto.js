@@ -10,6 +10,7 @@ import { fitaList, PONTOS, valorPonto, indices, nomePonto } from "./fita.js";
 import { dobrasList, soma, percentuais, nomeDobra, valorDobra, FORA, adipometro } from "./dobras.js";
 import { indiceForca, ancoras, serie1RM, progressao, variacao4, duracaoMin } from "./forca.js";
 import { rankingDor } from "./views/dorex.js";
+import { dadosPlano } from "./planoexport.js";
 
 const f = (v, d = 1) => (v == null || !isFinite(v) ? "–" : fmtNum(v, d));
 const sn = (v, d = 1) => (v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + fmtNum(Math.abs(v), d));
@@ -166,6 +167,13 @@ export function dadosCompletos(){
     ancoras().forEach(id => { const ser = serie1RM(id); if (ser.length) s9.paragrafos.push(`${getEx(id).nome}: ` + ser.map(x => `${dt(x.date)} ${f(x.v)} kg`).join("; ") + "."); });
     const rk = rankingDor();
     if (rk.length) s9.tabelas.push({ t: "Exercícios ligados à dor", head: ["Exercício", "Vezes", "Dor média", "Carga média", "Última"], body: rk.map(r => [getEx(r.exId).nome, String(r.vezes), f(r.dorMedia), r.cargaMedia != null ? f(r.cargaMedia) + " kg" : "–", dt(r.ultima)]) });
+  }
+  /* plano de treino atual */
+  const pl2 = dadosPlano({ historico: true });
+  if (pl2){
+    const sp = sec("Plano de treino atual");
+    sp.paragrafos.push(pl2.titulo.replace("Plano de treino: ", "") + " · " + pl2.sub.split(" · exportado")[0] + (pl2.aquecimento.length ? ". Aquecimento: " + pl2.aquecimento.join("; ") + "." : ""));
+    pl2.treinos.forEach(t => sp.tabelas.push({ t: `Treino ${t.letra}${t.foco ? ": " + t.foco : ""}${t.dias ? " (" + t.dias + ")" : ""}`, larga: true, head: pl2.head, body: t.linhas }));
   }
   /* 10. caminhadas */
   if (cw.length) sec("Caminhadas").tabelas.push({ head: ["Data", "Início", "Duração (min)", "Km", "Ritmo", "kcal (estim.)"],

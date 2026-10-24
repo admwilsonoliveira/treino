@@ -24,8 +24,8 @@ export function avaliacaoCardHtml(){
   if (!avaliacaoPendente()) return "";
   const saude = S.saude && S.saude.ativo;
   return `<div class="panel aviso" style="margin-top:12px"><strong>Dia de avaliação do mês</strong>
-    <p class="small" style="margin:4px 0 0">Teste de sentar e levantar${saude ? ", medidas com fita e dobras, em jejum" : ""}${preensaoLigada() ? " e força de preensão" : ""}. Leva poucos minutos.</p>
-    <div class="row" style="margin-top:10px"><button class="btn strength" data-act="testeSentar">Sentar e levantar</button>${saude ? `<button class="btn ghost" data-act="fitaNova">Medidas</button><button class="btn ghost" data-act="dobrasNova">Dobras</button>` : ""}</div></div>`;
+    <p class="small" style="margin:4px 0 0">Teste de sentar e levantar${saude ? ", medidas com fita e dobras (em jejum) e as fotos do mês" : ""}${preensaoLigada() ? " e força de preensão" : ""}. Leva poucos minutos.</p>
+    <div class="row" style="margin-top:10px"><button class="btn strength" data-act="testeSentar">Sentar e levantar</button>${saude ? `<button class="btn ghost" data-act="fitaNova">Medidas</button><button class="btn ghost" data-act="dobrasNova">Dobras</button><button class="btn ghost" data-act="fotosNova">Fotos</button>` : ""}</div></div>`;
 }
 
 /* ---------- seção em Evolução → Força ---------- */

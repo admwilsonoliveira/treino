@@ -178,7 +178,7 @@ actions.saveWalk = () => {
 
 /* ---------- backup ---------- */
 actions.backupExport = () => {
-  downloadBlob("treino-backup-" + ymd(new Date()) + ".json", JSON.stringify(exportData({ fotos: true }), null, 1), "application/json");
+  downloadBlob("treino-backup-" + ymd(new Date()) + ".json", JSON.stringify(exportData({ fotos: true, progresso: !!(S.saude && S.saude.backupFotosProgresso) }), null, 1), "application/json");
   S.settings.ultimoBackup = new Date().toISOString(); flush("kv", "settings");
   setStatus("Backup salvo em Downloads"); render();
 };

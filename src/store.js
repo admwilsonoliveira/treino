@@ -14,7 +14,7 @@ export const S = {
   fotos: {},              // foto do aparelho de cada exercício: { id: exId, data, thumb, atualizado }
   // módulo Saúde (só existe para quem ativou; ver saude.js)
   saude: null,            // configuração e consentimento (kv "saude")
-  doses: {}, sintomas: {}, eventos: {}, fita: {}, exames: {}, dobras: {},
+  doses: {}, sintomas: {}, eventos: {}, fita: {}, exames: {}, dobras: {}, progresso: {},
   testes: {}              // testes funcionais (sentar e levantar, preensão)
 };
 
@@ -124,7 +124,7 @@ export function imcClasse(v){
 
 /* ---------- gravação ---------- */
 const MAP = { sessions: "sessions", measurements: "measurements", plans: "plans", exercises: "exOverrides", fotos: "fotos",
-  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames", dobras: "dobras", testes: "testes" };
+  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames", dobras: "dobras", progresso: "progresso", testes: "testes" };
 const timers = {}, chains = {};
 function objFor(store, id){
   if (store === "kv") return id === "profile" ? S.profile : id === "saude" ? S.saude : S.settings;
@@ -222,14 +222,15 @@ export function latestWeight(){
 
 /* ---------- backup ---------- */
 // fotos: true inclui as fotos dos aparelhos (backup em arquivo); o backup do Drive as envia num arquivo separado
-export function exportData({ fotos = false } = {}){
+// progresso: true inclui as fotos de progresso (só no backup em arquivo, se o usuário escolher; nunca no Drive)
+export function exportData({ fotos = false, progresso = false } = {}){
   const d = {
     app: "treino-app", versao: BACKUP_VERSION, exportadoEm: new Date().toISOString(),
     kv: [S.profile, S.settings, S.saude].filter(Boolean),
     sessions: Object.values(S.sessions), measurements: Object.values(S.measurements),
     plans: Object.values(S.plans), exercises: Object.values(S.exOverrides), testes: Object.values(S.testes)
   };
-  if (S.saude) db.SAUDE_STORES.forEach(n => { d[n] = Object.values(S[n]); });
+  if (S.saude) db.SAUDE_STORES.filter(n => progresso || !db.SO_NO_APARELHO.includes(n)).forEach(n => { d[n] = Object.values(S[n]); });
   if (fotos) d.fotos = Object.values(S.fotos);
   return d;
 }

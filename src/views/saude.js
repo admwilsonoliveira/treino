@@ -4,9 +4,9 @@ import { actions, render, openModal, closeModal, modalState } from "../ui.js";
 import { esc, fmtNum, ddmm, ddmmyyyy, DIAS, $ } from "../util.js";
 import { saudeAtiva, ativarSaude, apagarSaude, contagemSaude, validarHistorico, prepararHistorico, aplicarHistorico } from "../saude.js";
 
-const TERMO = `<p class="small">Ao ativar, o app passa a guardar os dados de saúde que você registrar ou importar: <strong>medicação e doses, sintomas, medidas do corpo, eventos e resultados de exames</strong>.</p>
+const TERMO = `<p class="small">Ao ativar, o app passa a guardar os dados de saúde que você registrar ou importar: <strong>medicação e doses, sintomas, medidas do corpo, dobras, fotos de progresso, eventos e resultados de exames</strong>.</p>
   <ul class="small" style="padding-left:18px;margin:8px 0">
-    <li><strong>Onde ficam:</strong> só neste celular e, se você ligou o backup, na pasta oculta do app no <strong>seu</strong> Google Drive.</li>
+    <li><strong>Onde ficam:</strong> só neste celular e, se você ligou o backup, na pasta oculta do app no <strong>seu</strong> Google Drive. As fotos de progresso nunca vão para o Drive.</li>
     <li><strong>Quem vê:</strong> só você. Outras pessoas que usam o app não têm acesso, e nada é enviado ao desenvolvedor nem a terceiros.</li>
     <li><strong>Para que servem:</strong> registrar, calcular e avisar. O app não decide dose nem substitui o seu médico.</li>
     <li><strong>Seu controle:</strong> você pode apagar tudo quando quiser, em Perfil → Saúde.</li>
