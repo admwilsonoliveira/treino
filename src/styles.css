@@ -221,6 +221,8 @@ th{color:var(--ink-2);font-weight:600}
 .expl p{margin:0 0 8px}
 .expl p:last-child{margin-bottom:0}
 /* saúde */
+.grupo-exame{margin-top:10px}
+.grupo-exame summary{cursor:pointer;padding:2px 0}
 table.mapa td,table.mapa th{padding:3px;text-align:center;font-size:12px}
 table.mapa td:first-child{text-align:left;white-space:nowrap}
 .cel{display:block;min-width:30px;border-radius:6px;padding:4px 0;font-weight:700;font-size:11px;color:#fff}

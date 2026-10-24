@@ -11,6 +11,7 @@ import { metodosHtml, drawMetodos } from "./metodos.js";
 import { progressoHtml, sessoesFotos } from "./progresso.js";
 import { alimentacaoHtml } from "./alimentacao.js";
 import { vitaminasHtml } from "./vitaminas.js";
+import { examesHtml, examesAfter } from "./exames.js";
 import { ultimoValor } from "../fita.js";
 import { mediaAtual, ritmo } from "../peso.js";
 import {
@@ -68,10 +69,12 @@ views.saude = {
     if (ui.sub === "fotos") return progressoHtml();
     if (ui.sub === "alimentacao") return alimentacaoHtml();
     if (ui.sub === "vitaminas") return vitaminasHtml();
+    if (ui.sub === "exames") return examesHtml();
     const tx = textoAgenda(agenda()), m = mediaAtual(), r = ritmo(4);
     return `<h2 style="margin-top:0">Saúde</h2>${alertasHtml()}
       <button class="panel hub" data-act="goMedicacao"><div><strong>Medicação</strong><div class="small muted">${esc(tx.t)}${tx.s ? " · " + esc(tx.s) : ""}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goPeso" style="margin-top:12px"><div><strong>Peso</strong><div class="small muted">${m != null ? `${fmtNum(m)} kg (média de 7 dias)${r != null ? " · " + (r > 0 ? "+" : r < 0 ? "−" : "") + fmtNum(Math.abs(r), 2) + " kg/semana" : ""}` : "Nenhuma pesagem ainda"}</div></div><span aria-hidden="true">›</span></button>
+      <button class="panel hub" data-act="goExames" style="margin-top:12px"><div><strong>Exames</strong><div class="small muted">Resultados, FLI, TyG, testosterona livre e pendências</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goAlimentacao" style="margin-top:12px"><div><strong>Alimentação</strong><div class="small muted">Banco de alimentos (TACO + USDA) e cadastro pelo rótulo</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goVitaminas" style="margin-top:12px"><div><strong>Vitaminas da semana</strong><div class="small muted">B12, folato, vitamina D, fibra, cálcio, ferro, proteína e gordura boa</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goFotos" style="margin-top:12px"><div><strong>Fotos de progresso</strong><div class="small muted">${(n => n ? `Última sessão em ${ddmm(n.date)} · só neste celular` : "Frente, lado e costas, uma vez por mês")(sessoesFotos().pop())}</div></div><span aria-hidden="true">›</span></button>
@@ -81,7 +84,7 @@ views.saude = {
       <button class="panel hub" data-act="goTestes" style="margin-top:12px"><div><strong>Testes mensais</strong><div class="small muted">Sentar e levantar e força de preensão</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goMedidas" style="margin-top:12px"><div><strong>Medidas com fita</strong><div class="small muted">${(c => c ? `Cintura ${fmtNum(c.v)} cm em ${ddmm(c.date)}` : "Nenhuma medida em jejum ainda")(ultimoValor("cintura_umbigo"))}</div></div><span aria-hidden="true">›</span></button>`;
   },
-  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); if (ui.sub === "medidas") drawFita(); if (ui.sub === "dobras") drawDobras(); if (ui.sub === "metodos") drawMetodos(); }
+  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); if (ui.sub === "medidas") drawFita(); if (ui.sub === "dobras") drawDobras(); if (ui.sub === "metodos") drawMetodos(); if (ui.sub === "exames") examesAfter(); }
 };
 
 function medicacaoHtml(){

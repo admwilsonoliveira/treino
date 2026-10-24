@@ -56,7 +56,7 @@ actions.saudeApagarSim = async () => {
 
 /* ---------- importar histórico ---------- */
 actions.saudeImportar = () => $("#histFile").click();
-async function onHistoricoFile(file){
+export async function onHistoricoFile(file){
   let d;
   try{ d = JSON.parse(await file.text()); }catch(e){ alert("Não foi possível ler o arquivo. Escolha o arquivo .json do histórico."); return; }
   const err = validarHistorico(d); if (err){ alert(err); return; }
