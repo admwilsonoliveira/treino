@@ -4,6 +4,8 @@ import { S, flush, setStatus } from "../store.js";
 import { ui, views, actions, render, go, openModal, closeModal, modalState } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, DIAS, $ } from "../util.js";
 import { saudeAtiva } from "../saude.js";
+import { pesoHtml, drawPeso } from "./peso.js";
+import { mediaAtual, ritmo } from "../peso.js";
 import {
   MEDICAMENTOS, LOCAIS, STATUS_DOSE, nomeLocal, nomeMed, regrasTirzepatida, agenda, avisoIntervalo, sugerirLocal, dosesList, aplicadas,
   nivelAtual, curva, TIPOS_SINTOMA, SINAIS, nomeSintoma, sintomasList, alertasSeguranca, CHECKLIST, checklistPendente, horaAgora, addDias
@@ -52,17 +54,19 @@ views.saude = {
   html(){
     if (!saudeAtiva()) return `<div class="panel"><h3>Saúde</h3><p class="small muted" style="margin-top:6px">Ative o acompanhamento de saúde em Perfil → Saúde.</p><button class="btn strength" data-act="goTab" data-tab="perfil" style="margin-top:10px">Ir para o Perfil</button></div>`;
     if (ui.sub === "medicacao") return medicacaoHtml();
-    const tx = textoAgenda(agenda());
-    return `<header class="top"><h1>Saúde</h1></header>${alertasHtml()}
+    if (ui.sub === "peso") return pesoHtml();
+    const tx = textoAgenda(agenda()), m = mediaAtual(), r = ritmo(4);
+    return `<h2 style="margin-top:0">Saúde</h2>${alertasHtml()}
       <button class="panel hub" data-act="goMedicacao"><div><strong>Medicação</strong><div class="small muted">${esc(tx.t)}${tx.s ? " · " + esc(tx.s) : ""}</div></div><span aria-hidden="true">›</span></button>
-      <div class="panel" style="margin-top:12px"><strong>Peso e Medidas</strong><div class="small muted">Chegam na próxima atualização.</div></div>`;
+      <button class="panel hub" data-act="goPeso" style="margin-top:12px"><div><strong>Peso</strong><div class="small muted">${m != null ? `${fmtNum(m)} kg (média de 7 dias)${r != null ? " · " + (r > 0 ? "+" : r < 0 ? "−" : "") + fmtNum(Math.abs(r), 2) + " kg/semana" : ""}` : "Nenhuma pesagem ainda"}</div></div><span aria-hidden="true">›</span></button>
+      <div class="panel" style="margin-top:12px"><strong>Medidas com fita</strong><div class="small muted">Chegam na próxima atualização.</div></div>`;
   },
-  after(){ if (ui.sub === "medicacao") drawCurva(); }
+  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); }
 };
 
 function medicacaoHtml(){
   const sd = S.saude, ag = agenda(), tx = textoAgenda(ag);
-  let h = `<header class="top"><h1>Medicação</h1><button class="linkbtn" data-act="goSaude">Saúde</button></header>${alertasHtml()}`;
+  let h = `<div class="between"><h2 style="margin-top:0">Medicação</h2><button class="linkbtn" data-act="goSaude">‹ Saúde</button></div>${alertasHtml()}`;
   h += `<div class="panel"><div class="small muted">${esc(nomeMed(sd.medicamento))}${sd.doseAtualMg ? " · " + fmtNum(sd.doseAtualMg) + " mg" : ""}${sd.diaFixo != null ? " · toda " + DIAS[sd.diaFixo].toLowerCase() : ""}</div>
     <h3 style="margin-top:4px">${esc(tx.t)}</h3><div class="small muted">${esc(tx.s)}</div>
     ${msgPulada(ag)}

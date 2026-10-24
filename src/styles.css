@@ -221,6 +221,13 @@ th{color:var(--ink-2);font-weight:600}
 .expl p{margin:0 0 8px}
 .expl p:last-child{margin-bottom:0}
 /* saúde */
+nav.tabs button.fab{align-self:center;justify-self:center;width:56px;min-height:56px;height:56px;margin-top:-22px;border-radius:18px;background:var(--strength);color:var(--strength-ink);font-size:32px;font-weight:500;line-height:1;padding:0;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.acoes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+.acoes button{min-height:64px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2);font-weight:700;font-size:15px}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px}
+.legenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.barra-comp{display:flex;height:14px;border-radius:99px;overflow:hidden;margin:10px 0 8px}
+.panel.aviso{border:2px solid var(--walk)}
 .alerta-seg{background:var(--danger-soft);border:2px solid var(--danger);color:var(--danger);margin-bottom:12px}
 .alerta-seg strong{font-size:17px}
 .stat-num{font-family:var(--display);font-weight:800;font-size:26px;line-height:1;letter-spacing:-.8px;font-variant-numeric:tabular-nums}

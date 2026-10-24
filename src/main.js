@@ -15,6 +15,7 @@ import "./views/caminhada.js";
 import "./views/evolucao.js";
 import "./views/perfil.js";
 import "./views/medicacao.js";
+import "./views/mais.js";
 import { startOnboarding } from "./views/onboarding.js";
 import { initUpdates, checkForUpdate, tryApplyUpdate } from "./update.js";
 import { isNative, initNative, onBackButton, openExternal } from "./native.js";

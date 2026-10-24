@@ -102,13 +102,20 @@ export function readBioFields(){
   return out;
 }
 function modalMedida(id){
-  const m = id ? S.measurements[id] : { date: ymd(new Date()) };
+  const agora = new Date(), m = id ? S.measurements[id] : { date: ymd(agora), hora: String(agora.getHours()).padStart(2, "0") + ":" + String(agora.getMinutes()).padStart(2, "0") };
   openModal(`<h3>${id ? "Editar medida" : "Nova medida"}</h3>
     <p class="small muted" style="margin-top:6px">Só o peso é obrigatório. Os outros campos vêm da balança de bioimpedância, se você tiver.</p>
     <div class="grid2">
       <div class="field"><label class="lab" for="md-date">Data</label><input id="md-date" class="txt" type="date" value="${esc(m.date)}"></div>
       <div class="field"><label class="lab" for="md-peso">Peso (kg)</label><input id="md-peso" class="txt" type="text" inputmode="decimal" placeholder="Ex.: 89,5" value="${m.peso != null ? esc(fmtNum(m.peso)) : ""}"></div>
     </div>
+    <div class="grid2">
+      <div class="field"><label class="lab" for="md-hora">Hora</label><input id="md-hora" class="txt" type="time" value="${esc(m.hora || "")}"></div>
+      <div class="field"><span class="lab">Condição</span>
+        <label class="small" style="display:flex;gap:8px;align-items:center;min-height:30px"><input type="checkbox" id="md-jejum" ${m.jejum ? "checked" : ""} style="width:20px;height:20px;accent-color:var(--strength)"> Em jejum</label>
+        <label class="small" style="display:flex;gap:8px;align-items:center;min-height:30px"><input type="checkbox" id="md-banheiro" ${m.posBanheiro ? "checked" : ""} style="width:20px;height:20px;accent-color:var(--strength)"> Depois do banheiro</label></div>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">O ideal: todo dia, ao acordar, em jejum e depois do banheiro. O app usa a média de 7 dias, então a oscilação do dia a dia não atrapalha.</p>
     ${bioFieldsHtml(m)}
     <div class="err" id="md-err"></div>
     <div class="row" style="margin-top:20px"><button class="btn ghost" data-act="closeModal">Voltar</button><button class="btn strength" data-act="saveMedida" data-id="${esc(id || "")}">Salvar</button></div>
@@ -124,7 +131,7 @@ actions.saveMedida = el => {
   // mantém os campos que este formulário não mostra (jejum, hora, fonte, marcações da importação)
   const antes = Object.assign({}, S.measurements[id] || {});
   MED_FIELDS.forEach(f => { delete antes[f.k]; });
-  S.measurements[id] = Object.assign(antes, { id, date, peso }, readBioFields());
+  S.measurements[id] = Object.assign(antes, { id, date, peso, hora: $("#md-hora").value || null, jejum: $("#md-jejum").checked, posBanheiro: $("#md-banheiro").checked }, readBioFields());
   flush("measurements", id); closeModal(); render();
 };
 actions.delMedida = el => {
