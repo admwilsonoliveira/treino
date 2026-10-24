@@ -4,6 +4,7 @@ import { S, done, getEx, measurementsList, kcalFor, dorLabel, setStatus } from "
 import { ui, actions, render } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, timeOf, pace, downloadBlob } from "../util.js";
 import { diagnostico } from "../diagnostico.js";
+import { baixarRelatorio } from "../relcompleto.js";
 
 export const PERIODOS = [["30", "30 dias"], ["90", "90 dias"], ["365", "12 meses"], ["tudo", "Tudo"]];
 
@@ -65,7 +66,8 @@ const f1 = v => (v == null ? "–" : fmtNum(v));
 const sinal = v => (v == null ? "–" : (v > 0 ? "+" : "") + fmtNum(v));
 export function relatorioHtml(){
   const per = ui.relPeriodo || "30", r = relatorioDados(per), R = r.resumo;
-  let h = `<div class="toggle" role="group" aria-label="Período" style="margin-top:0">${PERIODOS.map(([k, t]) => `<button type="button" data-act="relPer" data-v="${k}" aria-pressed="${per === k}">${t}</button>`).join("")}</div>
+  let h = relCompletoHtml() + `<h2>Relatório de treino por período</h2>`;
+  h += `<div class="toggle" role="group" aria-label="Período" style="margin-top:0">${PERIODOS.map(([k, t]) => `<button type="button" data-act="relPer" data-v="${k}" aria-pressed="${per === k}">${t}</button>`).join("")}</div>
     <p class="small muted" style="margin:0 0 10px">De ${ddmmyyyy(r.de)} a ${ddmmyyyy(r.ate)}.</p>
     <div class="row"><button class="btn strength" data-act="relPdf">Exportar PDF</button><button class="btn ghost" data-act="relXlsx">Exportar Excel</button></div>`;
   h += `<h2>Resumo</h2><div class="stats">
@@ -106,6 +108,20 @@ export function relatorioHtml(){
   return h;
 }
 actions.relPer = el => { ui.relPeriodo = el.dataset.v; render(); };
+
+// Relatório completo dos últimos 12 meses (tudo: saúde, medidas, exames, treino)
+export function relCompletoHtml(){
+  return `<div class="panel" style="margin-bottom:12px"><h3>Relatório completo · últimos 12 meses</h3>
+    <p class="small muted" style="margin:6px 0 10px">Todos os números: peso, gordura e músculo por todos os métodos (relógio, fita e dobras)${S.saude && S.saude.ativo ? ", medicação, sintomas, medidas, exames" : ""}, treinos, força, caminhadas e testes. Fotos nunca entram.</p>
+    <div class="row"><button class="btn strength" data-act="relCompleto" data-v="md">Para a IA (Markdown)</button><button class="btn ghost" data-act="relCompleto" data-v="pdf">Para o médico (PDF)</button></div>
+    <p class="small muted" style="margin:8px 0 0">Contém dados de saúde: envie só para quem você confia.</p></div>`;
+}
+actions.relCompleto = async el => {
+  el.disabled = true; setStatus("Gerando relatório…");
+  try{ await baixarRelatorio(el.dataset.v); setStatus("Relatório gerado"); }
+  catch(e){ setStatus(""); alert("Não foi possível gerar o relatório.\n\n" + (e.message || e)); }
+  finally{ el.disabled = false; }
+};
 
 /* ---------- textos seguros para o PDF (fontes padrão só têm Latin-1) ---------- */
 const pdfTxt = s => String(s == null ? "" : s).replace(/[–—]/g, "-").replace(/…/g, "...").replace(/→/g, "->").replace(/≥/g, ">=").replace(/≤/g, "<=").replace(/[^\x00-\xFF]/g, "");

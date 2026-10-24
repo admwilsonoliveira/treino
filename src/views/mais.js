@@ -1,5 +1,5 @@
 // Aba "Mais" (navegação de quem usa o módulo Saúde) e o botão "+" de registro rápido.
-import { views, actions, openModal, closeModal } from "../ui.js";
+import { ui, views, actions, render, openModal, closeModal } from "../ui.js";
 
 views.mais = {
   html(){
@@ -15,4 +15,5 @@ views.mais = {
 const RAPIDO = [["addMedida", "Peso"], ["doseNova", "Dose"], ["fitaNova", "Medidas com fita"], ["dobrasNova", "Dobras"], ["sintomaNovo", "Sintoma"], ["eventoNovo", "Evento"]];
 actions.rapido = () => openModal(`<h3>Registrar</h3><div class="acoes">${RAPIDO.map(([a, l]) => `<button type="button" data-act="rapidoIr" data-v="${a}">${l}</button>`).join("")}</div>
   <div class="row" style="margin-top:16px"><button class="btn ghost block" data-act="closeModal">Fechar</button></div>`);
+actions.goRelCompleto = () => { ui.tab = "evolucao"; ui.sub = null; ui.evoView = "relatorio"; render(); window.scrollTo(0, 0); };
 actions.rapidoIr = el => { const fn = actions[el.dataset.v]; closeModal(); if (fn) fn(el); };
