@@ -4,7 +4,7 @@
 import { S, flush, setStatus } from "../store.js";
 import { ui, actions, changes, render, openModal, updateModal, closeModal, modalState } from "../ui.js";
 import { esc, fmtNum, ymd, ddmm, ddmmyyyy, newId, $ } from "../util.js";
-import { capturar, carregarImagem, reduzir } from "./fotos.js";
+import { capturar, carregarImagem, reduzir, escolherDaGaleria } from "./fotos.js";
 import { media7 } from "../peso.js";
 import { fitaList, valorPonto } from "../fita.js";
 
@@ -35,7 +35,7 @@ export function progressoHtml(){
     <div class="panel"><p class="small" style="margin:0">Uma vez por mês, junto com as medidas: <strong>frente, lado e costas</strong>.</p>
     <ul class="checklist small"><li>Mesmo local, mesma luz e mesma roupa.</li><li>Celular na mesma altura (apoiado numa prateleira, com o timer da câmera).</li><li>Corpo inteiro no quadro, postura relaxada.</li></ul>
     <p class="small muted" style="margin:0 0 10px">As fotos ficam só neste celular: não vão para o Google Drive nem para os relatórios.</p>
-    <button class="btn strength block" data-act="fotosNova">Tirar as fotos de hoje</button>
+    <div class="row"><button class="btn strength" data-act="fotosNova">Tirar as fotos de hoje</button><button class="btn ghost" data-act="fotosImportar">Importar da galeria</button></div>
     <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" data-act="fotosBackup" ${S.saude.backupFotosProgresso ? "checked" : ""} style="width:20px;height:20px;accent-color:var(--strength)"> Incluir as fotos no "Backup em arquivo" (o arquivo fica maior)</label></div>`;
   if (!ss.length) return h + `<p class="empty">Nenhuma foto ainda. A primeira serve de ponto de partida: daqui a alguns meses ela vai mostrar o que a balança não mostra.</p>`;
 
@@ -111,4 +111,30 @@ async function avancaPose(){
   }
   closeModal(); setStatus("Fotos salvas só neste celular"); ui.tab = "saude"; ui.sub = "fotos"; render();
 }
+/* ---------- importar fotos antigas da galeria (com a data em que foram tiradas) ---------- */
+actions.fotosImportar = async () => {
+  try{
+    const g = await escolherDaGaleria(), img = await carregarImagem(g.src);
+    const nova = { data: reduzir(img, 1080, 0.78), thumb: reduzir(img, 200, 0.7) };
+    const hoje = ymd(new Date()), date = g.date && g.date <= hoje ? g.date : hoje;
+    openModal(`<h3>Importar foto</h3><img src="${nova.data}" alt="" class="foto-prev">
+      <div class="field"><label class="lab" for="fi-date">Data da foto</label><input id="fi-date" class="txt" type="date" max="${hoje}" value="${date}">
+        <div class="help">${g.date ? "Data lida da própria foto. Confira." : "Não deu para ler a data da foto: informe quando ela foi tirada."}</div></div>
+      <div class="field"><span class="lab">Pose</span><div class="scale" style="--n:3">${POSES.map(([k, l], i) => `<button type="button" data-act="fiPose" data-v="${k}" aria-pressed="${i === 0}">${l}</button>`).join("")}</div></div>
+      <div class="err" id="fi-err"></div>
+      <div class="row" style="margin-top:16px"><button class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn strength" data-act="fiSalvar">Salvar</button></div>`, { nova, pose: "frente" });
+  }catch(e){ const m = String((e && e.message) || e); if (!/cancel/i.test(m)) alert("Não foi possível usar a foto.\n\n" + m); }
+};
+actions.fiPose = el => { modalState.pose = el.dataset.v; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false")); };
+actions.fiSalvar = async () => {
+  const date = $("#fi-date").value, { nova, pose } = modalState;
+  if (!date || date > ymd(new Date())){ $("#fi-err").textContent = "Informe a data da foto (não pode ser no futuro)."; return; }
+  if (fotos().some(x => x.date === date && x.pose === pose) && !confirm(`Já existe uma foto de ${nomePose(pose).toLowerCase()} em ${ddmmyyyy(date)}. Substituir?`)) return;
+  const velha = fotos().find(x => x.date === date && x.pose === pose), id = velha ? velha.id : newId("p");
+  S.progresso[id] = { id, date, pose, data: nova.data, thumb: nova.thumb, importada: true };
+  await flush("progresso", id);
+  closeModal(); setStatus("Foto importada");
+  if (confirm("Foto salva. Importar outra?")) return actions.fotosImportar();
+  render();
+};
 actions.fotosCancelar = () => { if (!Object.keys(modalState.novas || {}).length || confirm("Descartar as fotos desta sessão?")) closeModal(); };

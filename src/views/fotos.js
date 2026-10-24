@@ -36,6 +36,30 @@ export async function capturar(titulo = "Foto do aparelho"){
   });
 }
 
+// Escolhe uma foto da galeria e tenta descobrir a data em que ela foi tirada
+// (EXIF no app Android; data do arquivo no navegador). Devolve { src, date (AAAA-MM-DD) | null }.
+export async function escolherDaGaleria(){
+  const dataDe = v => { const m = String(v || "").match(/^(\d{4})[:\-](\d{2})[:\-](\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
+  if (isNative){
+    const { Camera } = await import("@capacitor/camera");
+    const r = await Camera.getPhoto({ resultType: "dataUrl", source: "PHOTOS", quality: 85, width: 1600, correctOrientation: true });
+    const ex = r.exif || {};
+    return { src: r.dataUrl, date: dataDe(ex.DateTimeOriginal || ex.DateTimeDigitized || ex.DateTime) };
+  }
+  return new Promise((ok, erro) => {
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*";
+    inp.addEventListener("change", () => {
+      const f = inp.files[0]; if (!f) return erro(new Error("cancelado"));
+      const d = f.lastModified ? new Date(f.lastModified) : null;
+      const fr = new FileReader();
+      fr.onload = () => ok({ src: fr.result, date: d ? d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") : null });
+      fr.onerror = erro; fr.readAsDataURL(f);
+    });
+    inp.click();
+  });
+}
+
 export function fotoHtml(exId){
   const f = S.fotos[exId];
   if (f) return `<button type="button" class="fotobtn" data-act="fotoVer" data-ex="${esc(exId)}" aria-label="Ver foto do aparelho"><img src="${f.thumb}" alt=""></button>`;
