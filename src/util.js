@@ -40,6 +40,19 @@ export function horaCampoHtml(id, valor){
   return `<div class="hora-campo"><select id="${id}-h" class="txt" aria-label="Hora">${op(24, isFinite(h) ? h : -1)}</select><span>:</span><select id="${id}-m" class="txt" aria-label="Minuto">${op(60, isFinite(m) ? m : -1)}</select></div>`;
 }
 export const lerHora = id => { const h = document.getElementById(id + "-h"), m = document.getElementById(id + "-m"); return h && m && h.value !== "" ? h.value + ":" + (m.value || "00") : null; };
+// Data em três seletores (dia, mês, ano), para telas em que o seletor de data do Android não colabora
+const MESES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+export function dataCampoHtml(id, valor, anoMin = 2015){
+  const [a, m, d] = String(valor || "").split("-").map(Number), anoMax = new Date().getFullYear();
+  const op = (de, ate, sel, nome) => Array.from({ length: ate - de + 1 }, (_, i) => de + i).map(v => `<option value="${v}" ${v === sel ? "selected" : ""}>${nome ? nome(v) : pad(v)}</option>`).join("");
+  return `<div class="data-campo"><select id="${id}-d" class="txt" aria-label="Dia">${op(1, 31, d)}</select><select id="${id}-m" class="txt" aria-label="Mês">${op(1, 12, m, v => MESES_CURTO[v - 1])}</select><select id="${id}-a" class="txt" aria-label="Ano">${op(anoMin, anoMax, a)}</select></div>`;
+}
+// devolve AAAA-MM-DD ou null se a data não existir (ex.: 31/02)
+export function lerData(id){
+  const d = +document.getElementById(id + "-d").value, m = +document.getElementById(id + "-m").value, a = +document.getElementById(id + "-a").value;
+  const x = new Date(a, m - 1, d, 12);
+  return x.getMonth() === m - 1 ? a + "-" + pad(m) + "-" + pad(d) : null;
+}
 export const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 export const DIAS_CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 export function downloadBlob(filename, data, type){

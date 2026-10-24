@@ -7,6 +7,7 @@ import { carregarBanco, bancoPronto, alimento, nomeCompleto, buscar, medidas, pa
 import { TIPOS_REFEICAO, nomeTipo, tipoPelaHora, refeicoesDo, aguaDo, totalDia, proteinaDaRefeicao, metas, aguaTotal, refeicoesComProteina,
   alertasAlimentacao, diaDeDose, semanaProteinaTreino, alimentosRecentes, favoritosAutomaticos } from "../nutricao.js";
 import { addDias, horaAgora } from "../medicacao.js";
+import { PERIODOS_ALIM, baixarRelAlimentar } from "../relalimentar.js";
 
 const hoje = () => ymd(new Date());
 const kg = v => fmtNum(v, v >= 100 ? 0 : 1);
@@ -71,7 +72,7 @@ export function diarioHtml(){
       <div class="small muted">${(r.itens || []).map(it => esc(it.nome.split(",")[0]) + " " + esc(it.medida || fmtNum(it.g, 0) + " g")).join(" · ") || "sem itens"}</div>
       <div class="small" style="margin-top:4px"><strong style="color:${p >= 30 ? "var(--sucesso)" : "var(--ink)"}">${fmtNum(p, 0)} g proteína</strong> · ${fmtNum(kc, 0)} kcal</div></button>`;
   });
-  h += `<div class="row" style="margin-top:10px"><button class="btn strength" data-act="refNova">Registrar refeição</button></div>`;
+  h += `<div class="row" style="margin-top:10px"><button class="btn strength" data-act="refNova">Registrar refeição</button><button class="btn ghost" data-act="relAlimAbrir">Exportar relatório</button></div>`;
   // proteína × treino de força na semana
   const s = semanaProteinaTreino();
   h += `<h2>Semana: proteína × treino</h2><div class="panel"><div class="stats" style="margin-top:0;grid-template-columns:1fr 1fr">
@@ -87,6 +88,21 @@ actions.aguaMais = el => {
   setStatus("+" + el.dataset.v + " ml de água"); render();
 };
 actions.aguaDesfazer = () => { const u = aguaDo(ui.diaAlim || hoje()).slice(-1)[0]; if (!u) return; delete S.agua[u.id]; flush("agua", u.id); render(); };
+
+/* ---------- relatório da alimentação (médico ou IA) ---------- */
+actions.relAlimAbrir = () => openModal(`<h3>Relatório da alimentação</h3>
+  <p class="small muted" style="margin-top:6px">Tudo o que foi registrado dia a dia (horários, alimentos, quantidades e valores), o acumulado por semana e as médias de vitaminas e minerais.</p>
+  <div class="toggle" role="group" style="margin:12px 0">${PERIODOS_ALIM.map(([k, l]) => `<button type="button" data-act="relAlimPer" data-v="${k}" aria-pressed="${k === "7"}">${l}</button>`).join("")}</div>
+  <div class="row"><button class="btn strength" data-act="relAlimBaixar" data-v="pdf">Para o médico (PDF)</button><button class="btn ghost" data-act="relAlimBaixar" data-v="md">Para a IA (Markdown)</button></div>
+  <p class="small muted" style="margin:10px 0 0">Contém dados de saúde: envie só para quem você confia.</p>
+  <div class="row" style="margin-top:10px"><button class="btn ghost block" data-act="closeModal">Fechar</button></div>`, { per: "7" });
+actions.relAlimPer = el => { modalState.per = el.dataset.v; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false")); };
+actions.relAlimBaixar = async el => {
+  el.disabled = true; setStatus("Gerando relatório…");
+  try{ await carregarBanco(); await baixarRelAlimentar(modalState.per, el.dataset.v); setStatus("Relatório gerado"); }
+  catch(e){ setStatus(""); alert("Não foi possível gerar o relatório: " + (e.message || e)); }
+  finally{ el.disabled = false; }
+};
 
 /* ---------- metas ---------- */
 actions.metasAlim = () => {

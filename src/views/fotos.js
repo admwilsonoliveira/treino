@@ -36,25 +36,51 @@ export async function capturar(titulo = "Foto do aparelho"){
   });
 }
 
-// Escolhe uma foto da galeria e tenta descobrir a data em que ela foi tirada
-// (EXIF no app Android; data do arquivo no navegador). Devolve { src, date (AAAA-MM-DD) | null }.
-export async function escolherDaGaleria(){
-  const dataDe = v => { const m = String(v || "").match(/^(\d{4})[:\-](\d{2})[:\-](\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : null; };
-  if (isNative){
-    const { Camera } = await import("@capacitor/camera");
-    const r = await Camera.getPhoto({ resultType: "dataUrl", source: "PHOTOS", quality: 85, width: 1600, correctOrientation: true });
-    const ex = r.exif || {};
-    return { src: r.dataUrl, date: dataDe(ex.DateTimeOriginal || ex.DateTimeDigitized || ex.DateTime) };
-  }
+// Data em que a foto foi tirada, lida do próprio arquivo JPEG (EXIF DateTimeOriginal)
+export function dataDoExif(buf){
+  try{
+    const v = new DataView(buf); if (v.getUint16(0) !== 0xFFD8) return null;
+    let o = 2;
+    while (o + 4 < v.byteLength){
+      const marca = v.getUint16(o), tam = v.getUint16(o + 2);
+      if (marca === 0xFFE1 && v.getUint32(o + 4) === 0x45786966){ // "Exif"
+        const t = o + 10, le = v.getUint16(t) === 0x4949;
+        const u16 = p => v.getUint16(t + p, le), u32 = p => v.getUint32(t + p, le);
+        const ler = (ifd, tag) => { const n = u16(ifd); for (let i = 0; i < n; i++){ const e = ifd + 2 + i * 12; if (u16(e) === tag) return e; } return null; };
+        const texto = e => { const len = u32(e + 4), p = u32(e + 8); let s = ""; for (let i = 0; i < len - 1; i++) s += String.fromCharCode(v.getUint8(t + p + i)); return s; };
+        const ifd0 = u32(4), exifPtr = ler(ifd0, 0x8769);
+        const e = (exifPtr != null && (ler(u32(exifPtr + 8), 0x9003) || ler(u32(exifPtr + 8), 0x9004))) || ler(ifd0, 0x0132);
+        if (e == null) return null;
+        const m = texto(e).match(/^(\d{4}):(\d{2}):(\d{2})/);
+        return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+      }
+      if ((marca & 0xFF00) !== 0xFF00) return null;
+      o += 2 + tam;
+    }
+  }catch(e){}
+  return null;
+}
+// Data no nome do arquivo: IMG_20260715_..., 20260715_..., IMG-20260715-WA..., Screenshot_2026-07-15...
+export function dataDoNome(nome){
+  const m = String(nome || "").match(/(20\d{2})[-_.]?(\d{2})[-_.]?(\d{2})/);
+  if (!m) return null;
+  const a = +m[1], mes = +m[2], d = +m[3];
+  return mes >= 1 && mes <= 12 && d >= 1 && d <= 31 ? `${m[1]}-${m[2]}-${m[3]}` : null;
+}
+// Escolhe várias fotos de uma vez; para cada uma devolve { src, date, de: "foto" | "nome" | null }
+export function escolherVarias(){
   return new Promise((ok, erro) => {
     const inp = document.createElement("input");
-    inp.type = "file"; inp.accept = "image/*";
-    inp.addEventListener("change", () => {
-      const f = inp.files[0]; if (!f) return erro(new Error("cancelado"));
-      const d = f.lastModified ? new Date(f.lastModified) : null;
-      const fr = new FileReader();
-      fr.onload = () => ok({ src: fr.result, date: d ? d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") : null });
-      fr.onerror = erro; fr.readAsDataURL(f);
+    inp.type = "file"; inp.accept = "image/*"; inp.multiple = true;
+    inp.addEventListener("change", async () => {
+      const fs = [...inp.files]; if (!fs.length) return erro(new Error("cancelado"));
+      const out = [];
+      for (const f of fs){
+        const buf = await f.arrayBuffer(), ex = dataDoExif(buf), nm = dataDoNome(f.name);
+        const src = await new Promise((r, e) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = e; fr.readAsDataURL(f); });
+        out.push({ src, date: ex || nm, de: ex ? "foto" : nm ? "nome" : null });
+      }
+      ok(out);
     });
     inp.click();
   });

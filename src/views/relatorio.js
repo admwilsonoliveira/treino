@@ -115,6 +115,8 @@ export function relCompletoHtml(){
     <p class="small muted" style="margin:6px 0 10px">Todos os números: peso, gordura e músculo por todos os métodos (relógio, fita e dobras)${S.saude && S.saude.ativo ? ", medicação, sintomas, medidas, exames" : ""}, treinos, força, caminhadas e testes. Fotos nunca entram.</p>
     <div class="row"><button class="btn strength" data-act="relCompleto" data-v="md">Para a IA (Markdown)</button><button class="btn ghost" data-act="relCompleto" data-v="pdf">Para o médico (PDF)</button></div>
     <p class="small muted" style="margin:8px 0 0">Contém dados de saúde: envie só para quem você confia.</p></div>
+    ${S.saude && S.saude.ativo ? `<div class="panel" style="margin-bottom:12px"><h3>Alimentação</h3><p class="small muted" style="margin:6px 0 10px">Todos os alimentos por dia, com horários e valores nutricionais, e o acumulado por semana.</p>
+    <div class="row"><button class="btn ghost" data-act="relAlimAbrir">Exportar relatório da alimentação</button></div></div>` : ""}
     <div class="panel" style="margin-bottom:12px"><h3>Plano de treino</h3><p class="small muted" style="margin:6px 0 10px">Lista de exercícios de cada treino, com séries, RIR, descanso, última carga e 1RM.</p>
     <div class="row"><button class="btn ghost" data-act="planoExportar">Exportar plano de treino</button></div></div>`;
 }

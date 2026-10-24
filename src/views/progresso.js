@@ -3,8 +3,8 @@
 // Na lista aparecem borradas até um toque. Comparação lado a lado com peso e cintura de cada data.
 import { S, flush, setStatus } from "../store.js";
 import { ui, actions, changes, render, openModal, updateModal, closeModal, modalState } from "../ui.js";
-import { esc, fmtNum, ymd, ddmm, ddmmyyyy, newId, $ } from "../util.js";
-import { capturar, carregarImagem, reduzir, escolherDaGaleria } from "./fotos.js";
+import { esc, fmtNum, ymd, ddmm, ddmmyyyy, newId, dataCampoHtml, lerData, $ } from "../util.js";
+import { capturar, carregarImagem, reduzir, escolherVarias } from "./fotos.js";
 import { media7 } from "../peso.js";
 import { fitaList, valorPonto } from "../fita.js";
 
@@ -111,30 +111,54 @@ async function avancaPose(){
   }
   closeModal(); setStatus("Fotos salvas só neste celular"); ui.tab = "saude"; ui.sub = "fotos"; render();
 }
-/* ---------- importar fotos antigas da galeria (com a data em que foram tiradas) ---------- */
+/* ---------- importar fotos antigas da galeria: várias de uma vez, cada uma com sua data e pose ---------- */
+// A data vem do próprio arquivo (EXIF) ou do nome (IMG_20260715...). No Android o seletor de data
+// e a leitura pelo plugin da câmera falhavam e todas caíam no mesmo dia: por isso dia/mês/ano em seletores.
 actions.fotosImportar = async () => {
   try{
-    const g = await escolherDaGaleria(), img = await carregarImagem(g.src);
-    const nova = { data: reduzir(img, 1080, 0.78), thumb: reduzir(img, 200, 0.7) };
-    const hoje = ymd(new Date()), date = g.date && g.date <= hoje ? g.date : hoje;
-    openModal(`<h3>Importar foto</h3><img src="${nova.data}" alt="" class="foto-prev">
-      <div class="field"><label class="lab" for="fi-date">Data da foto</label><input id="fi-date" class="txt" type="date" max="${hoje}" value="${date}">
-        <div class="help">${g.date ? "Data lida da própria foto. Confira." : "Não deu para ler a data da foto: informe quando ela foi tirada."}</div></div>
-      <div class="field"><span class="lab">Pose</span><div class="scale" style="--n:3">${POSES.map(([k, l], i) => `<button type="button" data-act="fiPose" data-v="${k}" aria-pressed="${i === 0}">${l}</button>`).join("")}</div></div>
-      <div class="err" id="fi-err"></div>
-      <div class="row" style="margin-top:16px"><button class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn strength" data-act="fiSalvar">Salvar</button></div>`, { nova, pose: "frente" });
-  }catch(e){ const m = String((e && e.message) || e); if (!/cancel/i.test(m)) alert("Não foi possível usar a foto.\n\n" + m); }
+    const lista = await escolherVarias();
+    setStatus("Preparando " + lista.length + " foto" + (lista.length === 1 ? "" : "s") + "…");
+    const itens = [];
+    for (const g of lista){
+      const img = await carregarImagem(g.src);
+      itens.push({ data: reduzir(img, 1080, 0.78), thumb: reduzir(img, 200, 0.7), date: g.date && g.date <= ymd(new Date()) ? g.date : null, de: g.de, pose: "frente" });
+    }
+    setStatus("");
+    openModal(`<div></div>`, { itens }); telaRevisao();
+  }catch(e){ setStatus(""); const m = String((e && e.message) || e); if (!/cancel/i.test(m)) alert("Não foi possível usar as fotos.\n\n" + m); }
 };
-actions.fiPose = el => { modalState.pose = el.dataset.v; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false")); };
-actions.fiSalvar = async () => {
-  const date = $("#fi-date").value, { nova, pose } = modalState;
-  if (!date || date > ymd(new Date())){ $("#fi-err").textContent = "Informe a data da foto (não pode ser no futuro)."; return; }
-  if (fotos().some(x => x.date === date && x.pose === pose) && !confirm(`Já existe uma foto de ${nomePose(pose).toLowerCase()} em ${ddmmyyyy(date)}. Substituir?`)) return;
-  const velha = fotos().find(x => x.date === date && x.pose === pose), id = velha ? velha.id : newId("p");
-  S.progresso[id] = { id, date, pose, data: nova.data, thumb: nova.thumb, importada: true };
-  await flush("progresso", id);
-  closeModal(); setStatus("Foto importada");
-  if (confirm("Foto salva. Importar outra?")) return actions.fotosImportar();
-  render();
+function telaRevisao(){
+  const its = modalState.itens, sem = its.filter(x => !x.date).length;
+  updateModal(`<div class="between"><h3>Importar ${its.length} foto${its.length === 1 ? "" : "s"}</h3><button class="linkbtn" data-act="closeModal">Cancelar</button></div>
+    <p class="small muted" style="margin-top:6px">Confira a data e a pose de cada foto.${sem ? ` <strong>${sem} sem data lida:</strong> informe quando foi tirada.` : ""}</p>
+    ${its.map((x, i) => `<div class="imp-foto"><img src="${x.thumb}" alt="">
+      <div><div class="small ${x.date ? "muted" : ""}" style="${x.date ? "" : "color:var(--walk)"}">${x.de === "foto" ? "Data lida da foto" : x.de === "nome" ? "Data lida do nome do arquivo" : "Data não encontrada"}</div>
+        ${dataCampoHtml("fi-d" + i, x.date || ymd(new Date()))}
+        <div class="scale" style="--n:3;margin-top:6px">${POSES.map(([k, l]) => `<button type="button" data-act="fiPose" data-i="${i}" data-v="${k}" aria-pressed="${x.pose === k}">${l}</button>`).join("")}</div></div></div>`).join("")}
+    <div class="err" id="fi-err"></div>
+    <div class="row" style="margin-top:14px"><button class="btn strength block" data-act="fiSalvarTodas">Salvar ${its.length === 1 ? "a foto" : "as " + its.length + " fotos"}</button></div>`);
+}
+actions.fiPose = el => {
+  const i = +el.dataset.i; modalState.itens[i].pose = el.dataset.v;
+  el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false"));
+};
+actions.fiSalvarTodas = async () => {
+  const its = modalState.itens, hoje = ymd(new Date());
+  for (let i = 0; i < its.length; i++){
+    const d = lerData("fi-d" + i);
+    if (!d || d > hoje){ $("#fi-err").textContent = `Foto ${i + 1}: data inválida ou no futuro.`; return; }
+    its[i].date = d;
+  }
+  // duas fotos da mesma pose no mesmo dia dentro deste lote
+  const chaves = its.map(x => x.date + x.pose), rep = chaves.find((c, i) => chaves.indexOf(c) !== i);
+  if (rep){ const x = its[chaves.indexOf(rep)]; $("#fi-err").textContent = `Há duas fotos de ${nomePose(x.pose).toLowerCase()} em ${ddmmyyyy(x.date)}. Mude a pose ou a data de uma delas.`; return; }
+  const substitui = its.filter(x => fotos().some(f => f.date === x.date && f.pose === x.pose));
+  if (substitui.length && !confirm(`${substitui.length} foto(s) vão substituir uma já existente na mesma data e pose. Continuar?`)) return;
+  for (const x of its){
+    const velha = fotos().find(f => f.date === x.date && f.pose === x.pose), id = velha ? velha.id : newId("p");
+    S.progresso[id] = { id, date: x.date, pose: x.pose, data: x.data, thumb: x.thumb, importada: true };
+    await flush("progresso", id);
+  }
+  closeModal(); setStatus(its.length + " foto" + (its.length === 1 ? " importada" : "s importadas")); render();
 };
 actions.fotosCancelar = () => { if (!Object.keys(modalState.novas || {}).length || confirm("Descartar as fotos desta sessão?")) closeModal(); };
