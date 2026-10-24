@@ -10,6 +10,7 @@ import { alertaPendente } from "./exames.js";
 import { humorBaixo, alertaStopBang, alertaApneia, alertaAlcool } from "./habitos.js";
 import { analise } from "./vitaminas.js";
 import { bancoPronto } from "./alimentos.js";
+import { alertasManutencao } from "./manutencao.js";
 
 export const MAX_ALERTAS = 3;
 
@@ -46,6 +47,7 @@ export function filaAlertas(){
   const fila = [
     saude && humorBaixo(),
     alertaDose(),
+    ...(saude ? alertasManutencao() : []),
     porTitulo(alim, "Proteína baixa"),
     alertaForca(),
     alertaTreinosSemana(),

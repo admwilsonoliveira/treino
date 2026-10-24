@@ -9,6 +9,7 @@ import { baseCintura, ultimoValor } from "./fita.js";
 import { examesList, padrao, serie, sinal, fli, tyg } from "./exames.js";
 import { indiceForca, variacao4 } from "./forca.js";
 import { stopBangUltimo, stopBangRisco } from "./habitos.js";
+import { manutencao, faixaAlvo, decisoesList, nomeDecisao } from "./manutencao.js";
 
 const pdfTxt = s => String(s == null ? "" : s).replace(/[–—]/g, "-").replace(/−/g, "-").replace(/…/g, "...").replace(/→/g, "->").replace(/≥/g, ">=").replace(/≤/g, "<=").replace(/[^\x00-\xFF]/g, "");
 const f = (v, d = 1) => (v == null || !isFinite(v) ? "-" : fmtNum(v, d));
@@ -71,6 +72,7 @@ export async function pdfMedico(){
     ["FLI (gordura no fígado)", fl ? `${f(fl.valor, 0)}${fl.ggtAntiga ? " (GGT antiga)" : ""}` : "-"],
     ["TyG", ty ? f(ty.valor, 2) : "-"],
     ["Índice de força", ix.length ? `${f(ix[ix.length - 1].v, 0)}${v4 ? " (" + sn(v4.pct) + "% em 4 sem)" : ""}` : "-"],
+    ...(manutencao().ativo && faixaAlvo() ? [["Manutenção (faixa)", `${f(faixaAlvo().min)} a ${f(faixaAlvo().max)} kg`]] : []),
     ["STOP-Bang", sb ? `${sb.pontos}/8 · risco ${stopBangRisco(sb.pontos)} (${ddmm(sb.date)})` : "não respondido"]
   ];
   let y = gy + 3;
@@ -90,6 +92,8 @@ export async function pdfMedico(){
     theme: "grid", styles: { fontSize: 7, cellPadding: 0.9 }, headStyles: { fillColor: verde }, margin: { left: M + W / 2 + 2, right: M }, tableWidth: W / 2 - 2 });
   y = Math.max(yDoses, doc.lastAutoTable.finalY) + 2;
   if (mud){ txt("Mudanças de dose: " + mud, M, y + 2.5, { s: 7 }); y += 4; }
+  const dcs = decisoesList().slice(-3);
+  if (dcs.length){ txt("Decisões anteriores: " + dcs.map(x => `${ddmm(x.date)} ${nomeDecisao(x.decisao).toLowerCase()}${x.motivo ? " (" + x.motivo + ")" : ""}`).join(" · "), M, y + 2.5, { s: 7 }); y += 4; }
 
   // últimos exames
   const ex = ultimosExames(16);

@@ -5,6 +5,7 @@ import { ui, views, actions, render, openModal, closeModal, modalState } from ".
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, $ } from "../util.js";
 import { addDias, diasAte } from "../medicacao.js";
 import { cinturaResumo } from "./fita.js";
+import { manutencao, faixaAlvo, FAIXA_PCT, GATILHO_KG, PLANO_ACAO } from "../manutencao.js";
 import { dobrasResumo } from "./dobras.js";
 import {
   pesagens, serieMedia, mediaAtual, ultimaPesagem, ritmo, perdaTotal, projecao, composicao, ffmiMensal, SURMOUNT, suaCurva,
@@ -26,6 +27,7 @@ export function pesoCardHtml(){
       <div class="stat-num" style="font-size:34px;margin-top:2px">${fmtNum(m)}<span class="small muted" style="font-weight:600;letter-spacing:0"> kg</span></div></div>
       <button class="linkbtn" data-act="goPeso">Ver peso</button></div>
     <div class="small" style="margin-top:6px">${r != null ? `<strong style="color:${r < 0 ? "var(--sucesso)" : "var(--ink-2)"}">${sinal(r, 2)} kg/semana</strong> <span class="muted">(4 sem.)</span>` : ""}${pt ? ` · ${sinal(pt.kg)} kg desde ${ddmm(pt.desde)}` : ""}</div>
+    ${(fx => fx && manutencao().ativo ? `<div class="small" style="margin-top:4px">Manutenção: faixa ${fmtNum(fx.min)}–${fmtNum(fx.max)} kg${m > fx.ref + GATILHO_KG ? ' · <strong style="color:var(--walk)">acima</strong>' : m >= fx.min && m <= fx.max ? " · dentro" : ""}</div>` : "")(faixaAlvo())}
     ${cinturaResumo() ? `<div class="small muted" style="margin-top:4px">${esc(cinturaResumo())}</div>` : ""}
     ${dobrasResumo() ? `<div class="small muted" style="margin-top:2px">${esc(dobrasResumo())}</div>` : ""}</div>`;
 }
@@ -61,6 +63,13 @@ export function pesoHtml(){
   const pj = projecao();
   if (pj.length) h += `<h2>Projeção</h2><div class="panel"><div class="stats" style="margin-top:0">${pj.map(p => `<div class="stat"><div class="v">${p.alvo}</div><div class="l">kg em ${mesNome(p.date)}</div></div>`).join("")}</div>
     <p class="small muted" style="margin:8px 0 0">Projeção pelo ritmo das últimas 4 semanas. O ritmo costuma diminuir com o tempo; use como referência, não como promessa.</p></div>`;
+
+  const mt = manutencao(), fx = faixaAlvo(mt);
+  h += `<h2>Modo manutenção</h2><div class="panel">${mt.ativo && fx ? `<div class="between"><div><strong>Ligado desde ${ddmm(mt.desde)}</strong><div class="small muted">Referência ${fmtNum(fx.ref)} kg · faixa ±${FAIXA_PCT}%: ${fmtNum(fx.min)} a ${fmtNum(fx.max)} kg</div></div>
+      <span class="tag" style="${m > fx.ref + GATILHO_KG ? "background:var(--walk-soft);color:var(--walk)" : ""}">${m > fx.ref + GATILHO_KG ? "acima" : m > fx.max ? "atenção" : m < fx.min ? "abaixo" : "dentro"}</span></div>
+      ${m > fx.ref + GATILHO_KG ? `<p class="small" style="margin:8px 0 0"><strong>Plano de ação:</strong></p><ul class="small" style="margin:4px 0 0;padding-left:18px">${PLANO_ACAO.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="small muted" style="margin:8px 0 0">Aviso se a média de 7 dias passar de ${fmtNum(fx.ref + GATILHO_KG)} kg.</p>`}
+      <div class="row" style="margin-top:10px"><button class="btn ghost" data-act="mantConfig">Alterar</button><button class="btn ghost" data-act="mantDesligar">Desligar</button></div>`
+    : `<p class="small" style="margin:0">Para quando chegar à meta ou quando o médico mudar a estratégia da dose: o app passa a vigiar uma faixa de ±${FAIXA_PCT}% em volta do peso de referência.</p><button class="btn ghost" data-act="mantConfig" style="margin-top:10px">Ligar modo manutenção</button>`}</div>`;
 
   const cp = composicao();
   if (cp) h += `<h2>Composição da perda</h2><div class="panel"><div class="small muted">De ${ddmm(cp.de)} a ${ddmm(cp.ate)}: ${sinal(cp.dPeso)} kg de peso, ${sinal(cp.dGordura)} kg de gordura</div>
@@ -109,6 +118,9 @@ export function drawPeso(){
     { label: "Pesagem", data: pts, showLine: false, pointRadius: 3, borderColor: st + "55", backgroundColor: st + "55" },
     { label: "Média 7 dias", data: med, borderColor: st, backgroundColor: st, pointRadius: 0, borderWidth: 2.8, tension: .25 }
   ];
+  // modo manutenção: limites da faixa-alvo
+  const fxg = manutencao().ativo && faixaAlvo();
+  if (fxg) [fxg.min, fxg.max].forEach(v => ds.push({ label: "Faixa de manutenção", data: [{ x: ini, y: v }, { x: fim, y: v }], borderColor: ink2, borderDash: [3, 3], pointRadius: 0, borderWidth: 1 }));
   // parou de fumar: ganho médio esperado a partir do peso daquele dia
   eventosList().filter(e => e.tipo === "parou_de_fumar").forEach(e => {
     const base = media7(e.date) || (u && num(u.peso)); if (!base) return;
@@ -181,3 +193,18 @@ export function perdaEstudoCardHtml(){
       <circle cx="${px(u.x)}" cy="${py(u.y)}" r="3.5" fill="var(--cor-primaria)"/></svg>
     <div class="small muted">Linha tracejada: média aproximada do estudo. Cada corpo responde de um jeito.</div></div>`;
 }
+
+/* ---------- modo manutenção ---------- */
+actions.mantConfig = () => {
+  const mt = manutencao(), ref = mt.pesoRef || mediaAtual();
+  openModal(`<h3>Modo manutenção</h3><p class="small muted" style="margin-top:6px">Ligue quando atingir a meta ou quando o médico mudar a estratégia da dose. O app só vigia e avisa.</p>
+    <div class="field"><label class="lab" for="mt-ref">Peso de referência (kg)</label><input id="mt-ref" class="txt" inputmode="decimal" value="${ref != null ? fmtNum(ref) : ""}"></div>
+    <p class="small muted">Faixa-alvo: ±${FAIXA_PCT}%. Aviso com plano de ação se a média de 7 dias passar ${fmtNum(GATILHO_KG)} kg da referência.</p>
+    <div class="row" style="margin-top:16px"><button class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn strength" data-act="mantSalvar">${mt.ativo ? "Salvar" : "Ligar"}</button></div>`);
+};
+actions.mantSalvar = () => {
+  const v = num($("#mt-ref").value); if (!(v > 30 && v < 300)){ alert("Informe o peso de referência em kg."); return; }
+  const mt = manutencao(); S.saude.manutencao = { ativo: true, pesoRef: Math.round(v * 10) / 10, desde: mt.ativo && mt.desde ? mt.desde : ymd(new Date()) };
+  flush("kv", "saude"); closeModal(); setStatus("Modo manutenção ligado"); render();
+};
+actions.mantDesligar = () => { if (!confirm("Desligar o modo manutenção?")) return; S.saude.manutencao = Object.assign(manutencao(), { ativo: false }); flush("kv", "saude"); render(); };

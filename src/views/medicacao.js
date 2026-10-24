@@ -2,7 +2,7 @@
 import { Chart, LineController, LineElement, PointElement, LinearScale, Tooltip, Legend } from "chart.js";
 import { S, flush, setStatus } from "../store.js";
 import { ui, views, actions, render, go, openModal, closeModal, modalState } from "../ui.js";
-import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, DIAS, horaCampoHtml, lerHora, $ } from "../util.js";
+import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, DIAS, horaCampoHtml, lerHora, dataCampoHtml, lerData, $ } from "../util.js";
 import { saudeAtiva } from "../saude.js";
 import { pesoHtml, drawPeso } from "./peso.js";
 import { fitaHtml, drawFita } from "./fita.js";
@@ -16,6 +16,7 @@ import { habitosHtml } from "./habitos.js";
 import { conquistasHtml } from "./conquistas.js";
 import { relSaudeHtml } from "./relsaude.js";
 import { cardapioHtml, cardapioAfter } from "./cardapio.js";
+import { DECISOES, nomeDecisao, decisoesList, acompanhamentoProximo } from "../manutencao.js";
 import { checkinDe } from "../habitos.js";
 import { ultimoValor } from "../fita.js";
 import { mediaAtual, ritmo } from "../peso.js";
@@ -120,6 +121,12 @@ function medicacaoHtml(){
   h += `<h2>Doses</h2><div class="panel">${ds.length ? `<ul class="hist">${ds.slice(0, 12).map(x => `<li><div><strong>${ddmmyyyy(x.date)}</strong>${x.hora ? ` <span class="muted small">${esc(x.hora)}</span>` : ""}
       <div class="small muted">${x.status === "aplicada" ? (x.doseMg ? fmtNum(x.doseMg) + " mg" : "") + (x.local ? " · " + esc(nomeLocal(x.local)) : "") : (STATUS_DOSE.find(s => s[0] === x.status) || [, x.status])[1]}${x.obs ? " · " + esc(x.obs) : ""}</div></div>
       <button class="del" data-act="doseEditar" data-id="${esc(x.id)}">Editar</button></li>`).join("")}</ul>${ds.length > 12 ? `<p class="small muted">Mostrando as 12 mais recentes de ${ds.length}.</p>` : ""}` : `<p class="empty">Nenhuma dose registrada. Toque em "Registrar dose" depois de aplicar.</p>`}</div>`;
+
+  // decisões do médico sobre a dose (o app só registra)
+  const dc = decisoesList().slice().reverse(), ap = acompanhamentoProximo();
+  h += `<h2>Decisões do médico</h2><div class="panel">${ap ? `<div class="infobox" style="margin-bottom:10px">Acompanhamento mais próximo até ${ddmm(ap.ate)} (3 meses depois de ${esc(nomeDecisao(ap.decisao.decisao).toLowerCase())}): pese-se pelo menos 2 vezes por semana; o app avisa se o peso subir.</div>` : ""}
+    ${dc.length ? `<ul class="hist">${dc.slice(0, 8).map(x => `<li><div><strong>${ddmmyyyy(x.date)}</strong> · ${esc(nomeDecisao(x.decisao))}${x.motivo ? `<div class="small muted">${esc(x.motivo)}</div>` : ""}</div><button class="del" data-act="decApagar" data-date="${esc(x.date)}" data-dec="${esc(x.decisao)}">Apagar</button></li>`).join("")}</ul>` : `<p class="small muted" style="margin:0">Registre aqui cada decisão da consulta sobre a dose (manter, reduzir, suspender…), com o motivo.</p>`}
+    <button class="btn ghost" data-act="decNova" style="margin-top:10px">Registrar decisão</button></div>`;
 
   const ss = sintomasList().slice().reverse();
   h += `<h2>Sintomas</h2><div class="panel">${ss.length ? `<ul class="hist">${ss.slice(0, 12).map(x => `<li><div><strong>${esc(nomeSintoma(x.tipo))}</strong> <span class="muted small">${ddmm(x.date)}</span>
@@ -303,4 +310,25 @@ actions.cfSalvar = () => {
   const mg = num($("#cf-mg").value);
   Object.assign(S.saude, { medicamento: modalState.med, diaFixo: modalState.dia, doseAtualMg: mg > 0 ? mg : S.saude.doseAtualMg, horaLembrete: $("#cf-hora").value || "08:00", lembrete: $("#cf-lem").checked });
   flush("kv", "saude"); closeModal(); setStatus("Medicação configurada"); render();
+};
+
+/* ---------- decisões médicas sobre a dose ---------- */
+actions.decNova = () => openModal(`<h3>Decisão do médico</h3>
+  <div class="field"><span class="lab">Data da consulta</span>${dataCampoHtml("dec", ymd(new Date()), 2020)}</div>
+  <div class="field"><span class="lab">Decisão</span><div class="chips">${DECISOES.map(([k, l]) => `<button type="button" class="chip" data-act="decTipo" data-v="${k}" aria-pressed="false">${l}</button>`).join("")}</div></div>
+  <div class="field"><label class="lab" for="dec-mot">Motivo</label><input id="dec-mot" class="txt" maxlength="200" placeholder="ex.: atingiu a meta; náusea forte"></div>
+  <p class="small muted">Reduzir ou suspender liga o acompanhamento mais próximo por 3 meses.</p>
+  <div class="row" style="margin-top:16px"><button class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn strength" data-act="decSalvar">Salvar</button></div>`, { decisao: null });
+actions.decTipo = el => { modalState.decisao = el.dataset.v; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === el))); };
+actions.decSalvar = () => {
+  const date = lerData("dec"), decisao = modalState.decisao;
+  if (!date || date > ymd(new Date())){ alert("Confira a data (não pode ser no futuro)."); return; }
+  if (!decisao){ alert("Escolha a decisão."); return; }
+  S.saude.decisoesDose = decisoesList().concat({ date, decisao, motivo: $("#dec-mot").value.trim() });
+  flush("kv", "saude"); closeModal(); setStatus("Decisão registrada"); render();
+};
+actions.decApagar = el => {
+  if (!confirm("Apagar esta decisão?")) return;
+  let feito = false; S.saude.decisoesDose = decisoesList().filter(x => feito || !(x.date === el.dataset.date && x.decisao === el.dataset.dec) || !(feito = true));
+  flush("kv", "saude"); render();
 };
