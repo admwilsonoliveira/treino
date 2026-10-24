@@ -143,6 +143,13 @@ export function alertasSeguranca(hoje = ymd(new Date())){
     if (x.tipo === "hipoglicemia") marca("hipoglicemia", x);
     if (x.tipo === "vomito" && sn(x).repetido) marca("vomito_forte", x);
   });
+  // água abaixo de 50% da meta nos 2 últimos dias + vômito ou diarreia nesses dias = risco de desidratação
+  const peso = (measurementsList().filter(m => num(m.peso) != null).pop() || {}).peso;
+  const mlKg = num(((S.saude.metasAlimentares) || {}).aguaMlKg) || 35, metaAgua = num(peso) ? num(peso) * mlKg : null;
+  const aguaDia = d => Object.values(S.agua || {}).filter(a => a.date === d).reduce((s, a) => s + (num(a.ml) || 0), 0);
+  const dois = [addDias(hoje, -1), hoje];
+  if (metaAgua && dois.every(d => Object.values(S.agua || {}).some(a => a.date === d) && aguaDia(d) < metaAgua * 0.5) && rec.some(x => (x.tipo === "vomito" || x.tipo === "diarreia") && diasAte(x.date, hoje) <= 1))
+    marca("desidratacao", { date: hoje });
   // náusea ou vômito com intensidade ≥ 7 em 2 dias diferentes dos últimos 3
   const fortes = new Set(rec.filter(x => (x.tipo === "nausea" || x.tipo === "vomito") && it(x) >= 7 && diasAte(x.date, hoje) <= 2).map(x => x.date));
   if (fortes.size >= 2) marca("vomito_forte", { date: [...fortes].sort().pop() });

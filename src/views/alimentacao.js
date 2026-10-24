@@ -3,6 +3,7 @@
 import { S, flush, setStatus } from "../store.js";
 import { ui, actions, inputs, render, openModal, updateModal, closeModal, modalState } from "../ui.js";
 import { esc, num, fmtNum, newId, $ } from "../util.js";
+import { diarioHtml } from "./diario.js";
 import { NUTRIENTES, nutri, VITAMINAS_ROTULO, carregarBanco, bancoPronto, fontes, meusAlimentos, alimento, nomeCompleto, buscar, medidas, paraGramas, ehFavorito } from "../alimentos.js";
 
 const SELO = { TACO: "TACO", USDA: "USDA", meu: "meu" };
@@ -12,7 +13,8 @@ actions.goAlimentacao = () => { ui.tab = "saude"; ui.sub = "alimentacao"; render
 export function alimentacaoHtml(){
   let h = `<div class="between"><h2 style="margin-top:0">Alimentação</h2><button class="linkbtn" data-act="goSaude">‹ Saúde</button></div>`;
   if (!bancoPronto()){ carregarBanco().then(render); return h + `<div class="loading">Carregando o banco de alimentos…</div>`; }
-  h += `<div class="panel"><input class="txt" id="al-q" type="search" placeholder="Buscar alimento (ex.: feijao, ovo, frango)" data-act="alBusca" value="${esc(ui.alBusca || "")}" autocomplete="off">
+  h += diarioHtml();
+  h += `<h2>Banco de alimentos</h2><div class="panel"><input class="txt" id="al-q" type="search" placeholder="Buscar alimento (ex.: feijao, ovo, frango)" data-act="alBusca" value="${esc(ui.alBusca || "")}" autocomplete="off">
     <div id="al-res" style="margin-top:8px">${resultadosHtml(ui.alBusca || "")}</div></div>`;
   const meus = meusAlimentos();
   h += `<div class="between"><h2>Meus alimentos</h2><button class="linkbtn" data-act="alRotulo">+ Cadastrar pelo rótulo</button></div><div class="panel">

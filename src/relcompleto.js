@@ -11,6 +11,8 @@ import { dobrasList, soma, percentuais, nomeDobra, valorDobra, FORA, adipometro 
 import { indiceForca, ancoras, serie1RM, progressao, variacao4, duracaoMin } from "./forca.js";
 import { rankingDor } from "./views/dorex.js";
 import { dadosPlano } from "./planoexport.js";
+import { refeicoesDo, totaisDe, aguaTotal, metas, nomeTipo } from "./nutricao.js";
+import { mondayOf } from "./util.js";
 
 const f = (v, d = 1) => (v == null || !isFinite(v) ? "–" : fmtNum(v, d));
 const sn = (v, d = 1) => (v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + fmtNum(Math.abs(v), d));
@@ -147,6 +149,23 @@ export function dadosCompletos(){
         if (ct != null && hdl != null) calc.push([dt(d), "Não-HDL", f(ct - hdl, 0) + " mg/dL", "< 130 mg/dL"]);
       });
       if (calc.length) s8.tabelas.push({ t: "Calculados", head: ["Data", "Índice", "Valor", "Referência"], body: calc });
+    }
+    /* alimentação: médias por semana (dias com registro) e, no Markdown, o que foi comido nos últimos 7 dias */
+    const refs = Object.values(S.refeicoes || {}).filter(noPer);
+    if (refs.length){
+      const sa = sec("Alimentação"), m = metas(), porSemana = {};
+      [...new Set(refs.map(r => r.date))].forEach(d => { const w = ymd(mondayOf(new Date(d + "T12:00:00"))); (porSemana[w] = porSemana[w] || []).push(d); });
+      sa.paragrafos.push(`Metas: proteína piso ${m.prot.piso} g, alvo ${m.prot.alvo} g, teto ${m.prot.teto} g; água ${f(m.agua / 1000)} L; fibra 25–38 g; açúcar adicionado < 25 g; sódio < 2.300 mg. Médias só dos dias com registro.`);
+      sa.tabelas.push({ t: "Médias por semana", larga: true, head: ["Semana de", "Dias registrados", "kcal", "Proteína (g)", "Dias ≥ piso", "Fibra (g)", "Sódio (mg)", "Água (L)"],
+        body: Object.keys(porSemana).sort().map(w => {
+          const ds = porSemana[w], tt = ds.map(d => totaisDe(refeicoesDo(d)).t), med = k => tt.reduce((s, t) => s + (t[k] || 0), 0) / tt.length;
+          return [dt(w), String(ds.length), f(med("kcal"), 0), f(med("prot"), 0), `${tt.filter(t => (t.prot || 0) >= m.prot.piso).length}/${ds.length}`, f(med("fibra"), 0), f(med("sodio"), 0), f(ds.reduce((s, d) => s + aguaTotal(d), 0) / ds.length / 1000, 1)];
+        }) });
+      const ult7 = [...new Set(refs.map(r => r.date))].sort().slice(-7);
+      sa.tabelas.push({ t: "O que foi registrado nos últimos 7 dias com registro", soMd: true, head: ["Data", "Refeição", "Hora", "Itens", "Proteína (g)", "kcal"],
+        body: ult7.flatMap(d => refeicoesDo(d).map(r => [dt(d), nomeTipo(r.tipo), r.hora || "–", (r.itens || []).map(it => `${it.nome} (${it.medida || f(it.g, 0) + " g"})`).join("; "),
+          f((r.itens || []).reduce((s, it) => s + (num(it.n && it.n.prot) || 0), 0), 0), f((r.itens || []).reduce((s, it) => s + (num(it.n && it.n.kcal) || 0), 0), 0)])) });
+      sa.notas.push("Valores dos alimentos: TACO 4ª ed. (NEPA/Unicamp) e USDA FoodData Central (CC0); alimentos de rótulo informados pelo usuário. Nutriente sem dado não entra na soma.");
     }
     /* eventos */
     const evs = eventosList().filter(noPer);

@@ -84,7 +84,9 @@ export function buscar(q, limite = 30){
 export function medidas(a){
   const out = [];
   if (a.porcaoG) out.push({ n: a.medida ? a.medida : "1 porção", g: a.porcaoG });
-  (a.med || []).forEach(m => out.push(m));
+  // unidade, fatia e filé antes de xícara e colher (é como se come no dia a dia)
+  const ordem = m => /unidade|fatia|filé|coxa|azeitona|folha/.test(m.n) ? 0 : /colher/.test(m.n) ? 1 : 2;
+  (a.med || []).slice().sort((x, y) => ordem(x) - ordem(y)).forEach(m => out.push(m));
   (((S.saude && S.saude.medidas) || {})[a.id] || []).forEach(m => out.push(Object.assign({ minha: true }, m)));
   return out;
 }
