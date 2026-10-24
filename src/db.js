@@ -3,8 +3,9 @@ const DB_NAME = "treino-app";
 // v2: store "fotos" (foto do aparelho de cada exercício)
 // v3: stores do módulo Saúde (doses, sintomas, eventos, medidas com fita, exames) — só acréscimo
 // v4: store "testes" (testes funcionais: sentar e levantar, preensão) — de todos os usuários
-const DB_VERSION = 4;
-export const SAUDE_STORES = ["doses", "sintomas", "eventos", "fita", "exames"];
+// v5: store "dobras" (dobras cutâneas, módulo Saúde)
+const DB_VERSION = 5;
+export const SAUDE_STORES = ["doses", "sintomas", "eventos", "fita", "exames", "dobras"];
 export const STORES = ["kv", "sessions", "measurements", "plans", "exercises", "fotos", "testes"].concat(SAUDE_STORES);
 
 let dbp = null;

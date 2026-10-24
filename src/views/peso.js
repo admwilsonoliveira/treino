@@ -5,6 +5,7 @@ import { ui, views, actions, render, openModal, closeModal, modalState } from ".
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, $ } from "../util.js";
 import { addDias, diasAte } from "../medicacao.js";
 import { cinturaResumo } from "./fita.js";
+import { dobrasResumo } from "./dobras.js";
 import {
   pesagens, serieMedia, mediaAtual, ultimaPesagem, ritmo, perdaTotal, projecao, composicao, ffmiMensal, SURMOUNT, suaCurva,
   faixasDose, TIPOS_EVENTO, nomeEvento, eventosList, notaEvento, ganhoFumo, plato, media7
@@ -25,7 +26,8 @@ export function pesoCardHtml(){
       <div class="stat-num" style="font-size:34px;margin-top:2px">${fmtNum(m)}<span class="small muted" style="font-weight:600;letter-spacing:0"> kg</span></div></div>
       <button class="linkbtn" data-act="goPeso">Ver peso</button></div>
     <div class="small" style="margin-top:6px">${r != null ? `<strong style="color:${r < 0 ? "var(--sucesso)" : "var(--ink-2)"}">${sinal(r, 2)} kg/semana</strong> <span class="muted">(4 sem.)</span>` : ""}${pt ? ` · ${sinal(pt.kg)} kg desde ${ddmm(pt.desde)}` : ""}</div>
-    ${cinturaResumo() ? `<div class="small muted" style="margin-top:4px">${esc(cinturaResumo())}</div>` : ""}</div>`;
+    ${cinturaResumo() ? `<div class="small muted" style="margin-top:4px">${esc(cinturaResumo())}</div>` : ""}
+    ${dobrasResumo() ? `<div class="small muted" style="margin-top:2px">${esc(dobrasResumo())}</div>` : ""}</div>`;
 }
 actions.goPeso = () => { ui.tab = "saude"; ui.sub = "peso"; render(); window.scrollTo(0, 0); };
 

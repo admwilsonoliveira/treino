@@ -14,7 +14,7 @@ export const S = {
   fotos: {},              // foto do aparelho de cada exercício: { id: exId, data, thumb, atualizado }
   // módulo Saúde (só existe para quem ativou; ver saude.js)
   saude: null,            // configuração e consentimento (kv "saude")
-  doses: {}, sintomas: {}, eventos: {}, fita: {}, exames: {},
+  doses: {}, sintomas: {}, eventos: {}, fita: {}, exames: {}, dobras: {},
   testes: {}              // testes funcionais (sentar e levantar, preensão)
 };
 
@@ -124,7 +124,7 @@ export function imcClasse(v){
 
 /* ---------- gravação ---------- */
 const MAP = { sessions: "sessions", measurements: "measurements", plans: "plans", exercises: "exOverrides", fotos: "fotos",
-  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames", testes: "testes" };
+  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames", dobras: "dobras", testes: "testes" };
 const timers = {}, chains = {};
 function objFor(store, id){
   if (store === "kv") return id === "profile" ? S.profile : id === "saude" ? S.saude : S.settings;

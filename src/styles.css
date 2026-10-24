@@ -221,6 +221,14 @@ th{color:var(--ink-2);font-weight:600}
 .expl p{margin:0 0 8px}
 .expl p:last-child{margin-bottom:0}
 /* saúde */
+.guia{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start;margin-top:8px}
+.guia-svg{width:110px;height:auto;display:block}
+.leitura-mm{font-size:28px;font-weight:800;text-align:center;min-height:60px}
+.checklist{padding-left:18px;margin:8px 0}
+.checklist li{margin-bottom:6px}
+.avancado summary{font-weight:700;cursor:pointer}
+.conquista{border:2px solid var(--walk);background:var(--walk-soft);margin-bottom:12px;animation:conquista .6s ease-out}
+@keyframes conquista{0%{transform:scale(.94);opacity:0}60%{transform:scale(1.02);opacity:1}100%{transform:scale(1)}}
 .grupo{border-top:1px solid var(--line);margin-top:12px;padding-top:4px}
 .grupo summary{font-weight:700;padding:10px 0;cursor:pointer}
 .ponto{margin:6px 0 10px}
