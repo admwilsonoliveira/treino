@@ -3,6 +3,7 @@
 import { S, flush, getEx, kcalOf, dorLabel, setStatus } from "../store.js";
 import { ui, actions, inputs, go, rerenderKeepScroll } from "../ui.js";
 import { esc, num, fmtNum, ddmmyyyy, timeOf, clone, $ } from "../util.js";
+import { dorExHtml, limpa } from "./dorex.js";
 
 export function abrirEdicao(id){
   if (!S.sessions[id]) return;
@@ -23,6 +24,7 @@ export function editarHtml(){
       ${treino ? "" : field("ed-km", "Distância (km)", s.km != null ? fmtNum(s.km) : "", 'type="text" inputmode="decimal" data-act="edF" data-f="km"')}
       <div class="grid2">${field("ed-dorA", dorLabel() + " antes", s.pre && s.pre.dor != null ? s.pre.dor : "", 'type="text" inputmode="numeric" data-act="edF" data-f="dorA"')}${field("ed-dorD", dorLabel() + " depois", s.post && s.post.dor != null ? s.post.dor : "", 'type="text" inputmode="numeric" data-act="edF" data-f="dorD"')}</div>
       ${field("ed-obs", "Observação", (s.post && s.post.obs) || "", 'type="text" maxlength="200" data-act="edF" data-f="obs"')}
+      ${treino ? `<div class="field" id="dorex">${dorExHtml(s, (s.post = s.post || {}, s.post.dorEx = s.post.dorEx || []))}</div>` : ""}
     </div>`;
   if (treino){
     // exercícios na ordem do treino, depois os que existirem só nos registros
@@ -78,6 +80,7 @@ actions.edSave = () => {
   s.start = ini.toISOString(); s.end = fim.toISOString();
   // remove séries totalmente vazias
   Object.keys(s.sets || {}).forEach(id => { s.sets[id] = s.sets[id].filter(x => num(x.kg) != null || num(x.reps) != null); });
+  if (s.post && Array.isArray(s.post.dorEx)){ if (s.post.dorEx.length) s.post.dorEx = limpa(s.post.dorEx); else delete s.post.dorEx; }
   s.kcal = kcalOf(s);
   s.editado = new Date().toISOString();
   S.sessions[s.id] = s; flush("sessions", s.id);

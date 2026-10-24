@@ -14,7 +14,8 @@ export const S = {
   fotos: {},              // foto do aparelho de cada exercício: { id: exId, data, thumb, atualizado }
   // módulo Saúde (só existe para quem ativou; ver saude.js)
   saude: null,            // configuração e consentimento (kv "saude")
-  doses: {}, sintomas: {}, eventos: {}, fita: {}, exames: {}
+  doses: {}, sintomas: {}, eventos: {}, fita: {}, exames: {},
+  testes: {}              // testes funcionais (sentar e levantar, preensão)
 };
 
 export const DEFAULT_SETTINGS = { id: "settings", activePlanId: null, restPadrao: 60, walk: { ativo: true, km: 5, dias: [1, 2, 3, 4, 5], hora: "18:00" },
@@ -43,6 +44,7 @@ export async function loadAll(){
   S.plans = Object.fromEntries(plans.map(x => [x.id, x]));
   S.exOverrides = Object.fromEntries(exercises.map(x => [x.id, x]));
   S.fotos = Object.fromEntries((fotos || []).map(x => [x.id, x]));
+  S.testes = Object.fromEntries((by.testes || []).map(x => [x.id, x]));
   migrate();
 }
 
@@ -122,7 +124,7 @@ export function imcClasse(v){
 
 /* ---------- gravação ---------- */
 const MAP = { sessions: "sessions", measurements: "measurements", plans: "plans", exercises: "exOverrides", fotos: "fotos",
-  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames" };
+  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames", testes: "testes" };
 const timers = {}, chains = {};
 function objFor(store, id){
   if (store === "kv") return id === "profile" ? S.profile : id === "saude" ? S.saude : S.settings;
@@ -225,7 +227,7 @@ export function exportData({ fotos = false } = {}){
     app: "treino-app", versao: BACKUP_VERSION, exportadoEm: new Date().toISOString(),
     kv: [S.profile, S.settings, S.saude].filter(Boolean),
     sessions: Object.values(S.sessions), measurements: Object.values(S.measurements),
-    plans: Object.values(S.plans), exercises: Object.values(S.exOverrides)
+    plans: Object.values(S.plans), exercises: Object.values(S.exOverrides), testes: Object.values(S.testes)
   };
   if (S.saude) db.SAUDE_STORES.forEach(n => { d[n] = Object.values(S[n]); });
   if (fotos) d.fotos = Object.values(S.fotos);
@@ -241,6 +243,7 @@ export async function restoreData(d, modo = "substituir"){
   await flushPending();
   const dados = { kv: d.kv || [], sessions: d.sessions || [], measurements: d.measurements || [], plans: d.plans || [], exercises: d.exercises || [] };
   if (Array.isArray(d.fotos)) dados.fotos = d.fotos; // só substitui as fotos se o backup trouxer fotos
+  if (Array.isArray(d.testes)) dados.testes = d.testes;
   db.SAUDE_STORES.forEach(n => { if (Array.isArray(d[n])) dados[n] = d[n]; });
   if (modo === "mesclar") await db.mergeAll(dados);
   else {

@@ -7,6 +7,7 @@ import { viewResumo, summaryCard } from "./equilibrio.js";
 import { semanaInfo, seriesNaSemana } from "../programa.js";
 import { sugestao } from "../progressao.js";
 import { fotoHtml } from "./fotos.js";
+import { dorExHtml, DOR_MIN, limpa } from "./dorex.js";
 import { semanaHtml as organizarSemanaHtml } from "./semana.js";
 
 // Faixa da semana do programa de 12 semanas (deload em destaque)
@@ -165,12 +166,23 @@ actions.finishTreino = () => {
   <div class="field"><span class="lab">${dorLabel()} agora (0 a 10)</span>${rangeHtml("dor", 0)}</div>
   <div class="field"><span class="lab">${SAFETY().q}</span><div class="yn" role="group"><button type="button" data-act="yn" data-v="nao" aria-pressed="false">Não</button><button type="button" data-act="yn" data-v="sim" aria-pressed="false">Sim</button></div>
   <div class="warnbox" id="warn">${SAFETY().warn}</div></div>
+  <div class="field" id="dorex" hidden></div>
   <div class="field"><span class="lab">Como foi o treino (1 a 5)</span>${scaleHtml("sens", 5, 1)}</div>
   <div class="field"><label class="lab" for="obs">Observação (opcional)</label><input id="obs" class="txt" type="text" maxlength="200" placeholder="Ex.: leg press pesado hoje, lombar tranquila"></div>
   ${endTimeFieldHtml(s)}
   <div class="err" id="co-err"></div>
   <div class="row" style="margin-top:20px"><button class="btn ghost" data-act="closeModal">Voltar</button><button class="btn strength" data-act="confirmFinishTreino">Finalizar treino</button></div>`,
-  { dor: 0, irradiada: null, sens: null });
+  { dor: 0, irradiada: null, sens: null, dorEx: [] });
+};
+// dor depois do treino ≥ 2: pergunta qual exercício incomodou
+const rangeBase = inputs.range;
+inputs.range = (el, ev) => {
+  rangeBase(el, ev);
+  const box = $("#dorex"), s = active("treino");
+  if (!box || el.dataset.name !== "dor" || !s) return;
+  const mostra = modalState.dor >= DOR_MIN;
+  if (mostra && box.hidden) box.innerHTML = dorExHtml(s, modalState.dorEx);
+  box.hidden = !mostra;
 };
 actions.yn = el => {
   modalState.irradiada = el.dataset.v === "sim";
@@ -184,6 +196,7 @@ actions.confirmFinishTreino = () => {
   s.end = readEndTime(s); s.status = "concluido";
   // irradiada: dor descendo para a perna (quem tem hérnia lombar); dorAguda: dor forte/fora do normal (demais)
   s.post = Object.assign({ dor: modalState.dor, sens: modalState.sens, obs: $("#obs").value.trim() }, hasRestr("lombar") ? { irradiada: modalState.irradiada } : { dorAguda: modalState.irradiada });
+  if (modalState.dor >= DOR_MIN && modalState.dorEx.length) s.post.dorEx = limpa(modalState.dorEx);
   s.kcal = kcalOf(s);
   closeModal(); flush("sessions", s.id); stopRest();
   go("hoje");

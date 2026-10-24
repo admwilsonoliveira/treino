@@ -3,6 +3,7 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Tooltip,
 import { S, flush, getEx, exercisesWithHistory } from "../store.js";
 import { ui, actions, render, openModal, closeModal, modalState } from "../ui.js";
 import { esc, fmtNum, ddmm, $ } from "../util.js";
+import { testesHtml, drawTestes } from "./testes.js";
 import { CALIBRAGEM, REPS_MAX, serie1RM, tendencia, ancoras, ancorasSugeridas, indiceForca, variacao4, alertaForca, sessoesSemana, progressao } from "../forca.js";
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Tooltip, Legend);
@@ -20,6 +21,7 @@ export function forcaCardHtml(){
       <div style="text-align:right"><div class="small">${n} sess${n === 1 ? "ão" : "ões"} de força na semana</div><div class="small muted">meta: pelo menos 3</div></div></div>
     <div class="small" style="margin-top:6px">${v ? `<strong style="color:${v.pct >= 0 ? "var(--sucesso)" : v.pct < -10 ? "var(--danger)" : "var(--ink-2)"}">${sinal(v.pct, 1)}% em 4 semanas</strong>` : "Comparação de 4 semanas aparece com mais dados."} <button class="linkbtn" data-act="goForca">Ver força</button></div></div>`;
 }
+actions.goTestes = () => { ui.tab = "evolucao"; ui.sub = null; ui.evoView = "forca"; render(); const t = document.getElementById("testes"); if (t) t.scrollIntoView(); };
 actions.goForca = () => { ui.tab = "evolucao"; ui.sub = null; ui.evoView = "forca"; render(); window.scrollTo(0, 0); };
 
 /* ---------- aba ---------- */
@@ -51,11 +53,12 @@ export function forcaHtml(){
       const d = p.anterior ? (p.atual - p.anterior) / p.anterior * 100 : null;
       return `<tr><td style="white-space:normal">${esc(getEx(p.id).nome)}</td><td>${p.anterior ? fmtNum(p.anterior) : "–"}</td><td>${fmtNum(p.atual)}</td><td style="font-weight:700;color:${d == null ? "var(--ink-2)" : d >= 0 ? "var(--sucesso)" : "var(--danger)"}">${d == null ? "–" : sinal(d, 1) + "%"}</td></tr>`; }).join("")}</tbody></table></div>
     <p class="small muted" style="margin:8px 0 0">Média do 1RM estimado em kg, sem as ${CALIBRAGEM} sessões de calibragem. Em déficit calórico, manter a carga já é sucesso.</p></div>`;
-  return h;
+  return h + testesHtml();
 }
 
 export function drawForca(){
   charts.forEach(c => { try{ c.destroy(); }catch(e){} }); charts = [];
+  drawTestes();
   const mu = cssVar("--musculo"), ink2 = cssVar("--ink-2"), line = cssVar("--line");
   const base = (el, ds, yFmt) => charts.push(new Chart(el, { type: "line", data: { datasets: ds }, options: {
     responsive: true, maintainAspectRatio: false, animation: false, parsing: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: it => fmtD(it[0].parsed.x), label: it => yFmt(it.parsed.y) } } },

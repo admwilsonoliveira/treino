@@ -7,6 +7,7 @@ import { setsSummary } from "./treinos.js";
 import { relatorioHtml } from "./relatorio.js";
 import { editarHtml, abrirEdicao } from "./editar.js";
 import { forcaHtml, drawForca } from "./forca.js";
+import { rankingHtml } from "./dorex.js";
 
 Chart.register(LineController, LineElement, PointElement, BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend);
 
@@ -31,7 +32,7 @@ views.evolucao = {
     else if (v === "forca") h += forcaHtml();
     else if (v === "corpo") h += corpoHtml();
     else if (v === "calorias") h += caloriasHtml();
-    else if (v === "dor") h += dorHtml();
+    else if (v === "dor") h += dorHtml() + rankingHtml();
     else if (v === "relatorio") h += relatorioHtml();
     else h += registrosHtml();
     return h;

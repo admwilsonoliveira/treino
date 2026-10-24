@@ -9,7 +9,7 @@ const TreinoTimer = registerPlugin("TreinoTimer");
 
 let LN = null, KA = null, AppP = null, FS = null, SH = null, BR = null;
 const ID = { treino: 4101, descanso: 4102, caminhada: 4103, alarme: 5001 };
-const LEMBRETE_BASE = { treino: 6000, caminhada: 6010, dose: 6020 };
+const LEMBRETE_BASE = { treino: 6000, caminhada: 6010, dose: 6020, avaliacao: 6030 };
 let permOk = null;
 export const notifReady = () => permOk === true;
 
@@ -93,15 +93,17 @@ export async function restCanceled(hideBar = true){
 
 /* ---------- lembretes semanais ---------- */
 const hm = s => { const [h, m] = String(s || "").split(":").map(Number); return isFinite(h) && isFinite(m) ? { h, m } : null; };
-export async function scheduleReminders({ treinos, walk, dose }){
+export async function scheduleReminders({ treinos, walk, dose, avaliacao }){
   if (!isNative) return;
   const ids = [];
   for (let d = 0; d < 7; d++) ids.push({ id: LEMBRETE_BASE.treino + d }, { id: LEMBRETE_BASE.caminhada + d }, { id: LEMBRETE_BASE.dose + d });
+  ids.push({ id: LEMBRETE_BASE.avaliacao });
   try{ await LN.cancel({ notifications: ids }); }catch(e){}
   const list = [];
   (treinos || []).forEach(t => { const x = hm(t.hora); if (x) list.push({ id: LEMBRETE_BASE.treino + t.weekday, title: t.title, body: t.body, channelId: "lembretes", schedule: { on: { weekday: t.weekday + 1, hour: x.h, minute: x.m }, allowWhileIdle: true } }); });
   (walk || []).forEach(t => { const x = hm(t.hora); if (x) list.push({ id: LEMBRETE_BASE.caminhada + t.weekday, title: t.title, body: t.body, channelId: "lembretes", schedule: { on: { weekday: t.weekday + 1, hour: x.h, minute: x.m }, allowWhileIdle: true } }); });
   (dose || []).forEach(t => { const x = hm(t.hora); if (x) list.push({ id: LEMBRETE_BASE.dose + t.weekday, title: t.title, body: t.body, channelId: "lembretes", schedule: { on: { weekday: t.weekday + 1, hour: x.h, minute: x.m }, allowWhileIdle: true } }); });
+  if (avaliacao && avaliacao.at > new Date()) list.push({ id: LEMBRETE_BASE.avaliacao, title: avaliacao.title, body: avaliacao.body, channelId: "lembretes", schedule: { at: avaliacao.at, allowWhileIdle: true } });
   if (!list.length) return;
   if (!(await ensureNotifPermission())) return;
   try{ await LN.schedule({ notifications: list }); }catch(e){}

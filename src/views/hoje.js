@@ -5,6 +5,7 @@ import { remoteBannerHtml } from "./nuvem.js";
 import { alertasHtml, medicacaoCardHtml } from "./medicacao.js";
 import { pesoCardHtml } from "./peso.js";
 import { forcaCardHtml } from "./forca.js";
+import { avaliacaoCardHtml } from "./testes.js";
 import { alertaForca, alertaDuracao } from "../forca.js";
 import { alertasPeso } from "../peso.js";
 import { alertasSeguranca } from "../medicacao.js";
@@ -49,7 +50,7 @@ views.hoje = {
     else if (t && !at && !tDone) h += `<button class="btn strength" data-act="openTreino" data-t="${t}">Abrir treino ${t}</button>`;
     if (!aw) h += `<button class="btn ${t && !tDone ? "ghost" : "walk"}" data-act="startWalk">Iniciar caminhada</button>`;
     h += `</div></div>`;
-    h += medicacaoCardHtml() + (S.saude && S.saude.ativo ? pesoCardHtml() : "") + forcaCardHtml();
+    h += medicacaoCardHtml() + (S.saude && S.saude.ativo ? pesoCardHtml() : "") + forcaCardHtml() + avaliacaoCardHtml();
 
     // semana
     const mon = mondayOf(d), nTreinos = p ? new Set(planLetters(p).flatMap(L => p.treinos[L].dias || [])).size : 0;

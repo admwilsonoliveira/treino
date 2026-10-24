@@ -5,7 +5,7 @@
 //   ou se a dor no check-in de hoje é 4 ou mais;
 // - em semana de deload, sugere carga mais leve.
 import { done, lastSetsFor } from "./store.js";
-import { num, fmtNum } from "./util.js";
+import { num, fmtNum, ddmm } from "./util.js";
 
 const DEGRAU = { halter: 1, maquina: 2.5, cabo: 2.5, barra: 2, kettlebell: 4, elastico: 0, corpo: 0 };
 const LIMITE = 0.05;
@@ -29,6 +29,13 @@ function bloqueio(sessaoAtual){
   return null;
 }
 
+// Exercício marcado como "incomodou" num treino dos últimos 14 dias (s.post.dorEx)
+function dorNoExercicio(exId, sessaoAtual){
+  const lim = Date.now() - 14 * 864e5;
+  const s = done().filter(x => x !== sessaoAtual && x.type === "treino" && x.post && Array.isArray(x.post.dorEx) && x.post.dorEx.some(y => y.exId === exId) && new Date(x.start).getTime() >= lim).pop();
+  return s ? `este exercício incomodou em ${ddmm(s.date)}` : null;
+}
+
 // Retorna { tipo: "subir" | "manter" | "abaixo" | "limite" | "bloqueado" | "deload" | "reps", texto, kg? } ou null
 export function sugestao(it, ex, sessaoAtual, semana){
   const last = lastSetsFor(it.exId, sessaoAtual && sessaoAtual.id);
@@ -44,7 +51,7 @@ export function sugestao(it, ex, sessaoAtual, semana){
     return kg ? { tipo: "deload", kg: Math.round(kg * 0.85 / 0.5) * 0.5, texto: `Semana de deload: use cerca de ${fmtNum(Math.round(kg * 0.85 / 0.5) * 0.5)} ${un} (15% mais leve), sem chegar perto da falha.` }
       : { tipo: "deload", texto: "Semana de deload: faça menos repetições, sem chegar perto da falha." };
   }
-  const motivo = bloqueio(sessaoAtual);
+  const motivo = bloqueio(sessaoAtual) || dorNoExercicio(it.exId, sessaoAtual);
   if (motivo) return { tipo: "bloqueado", kg, texto: `Sem aumento de carga hoje (${motivo}). Mantenha${kg ? " " + fmtNum(kg) + " " + un : ""} ou reduza.` };
 
   const todasNoTopo = sets.every(x => x.reps >= topo);
