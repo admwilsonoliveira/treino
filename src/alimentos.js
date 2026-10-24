@@ -27,6 +27,7 @@ export function carregarBanco(){
   return carregando;
 }
 export const bancoPronto = () => !!banco;
+export const itensBanco = () => (banco ? banco.itens : []);
 export const fontes = () => (banco ? banco.fontes : {});
 
 // alimentos cadastrados pelo usuário (store "alimentos")

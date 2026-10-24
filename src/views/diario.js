@@ -72,7 +72,8 @@ export function diarioHtml(){
       <div class="small muted">${(r.itens || []).map(it => esc(it.nome.split(",")[0]) + " " + esc(it.medida || fmtNum(it.g, 0) + " g")).join(" · ") || "sem itens"}</div>
       <div class="small" style="margin-top:4px"><strong style="color:${p >= 30 ? "var(--sucesso)" : "var(--ink)"}">${fmtNum(p, 0)} g proteína</strong> · ${fmtNum(kc, 0)} kcal</div></button>`;
   });
-  h += `<div class="row" style="margin-top:10px"><button class="btn strength" data-act="refNova">Registrar refeição</button><button class="btn ghost" data-act="relAlimAbrir">Exportar relatório</button></div>`;
+  h += `<div class="row" style="margin-top:10px"><button class="btn strength" data-act="refNova">Registrar refeição</button><button class="btn ghost" data-act="relAlimAbrir">Exportar relatório</button></div>
+    <button class="panel hub" data-act="goVitaminas" style="margin-top:12px"><div><strong>Vitaminas da semana</strong><div class="small muted">Análise dos 8 nutrientes-alvo e alimentos que ajudam</div></div><span aria-hidden="true">›</span></button>`;
   // proteína × treino de força na semana
   const s = semanaProteinaTreino();
   h += `<h2>Semana: proteína × treino</h2><div class="panel"><div class="stats" style="margin-top:0;grid-template-columns:1fr 1fr">
