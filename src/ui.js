@@ -151,7 +151,7 @@ function beep(){
 let wakeLock = null;
 export async function syncWakeLock(){
   if (isNative) return; // no app Android a tela ligada é controlada em native.js
-  const want = !!active("treino") && document.visibilityState === "visible";
+  const want = (!!active("treino") || !!ui.cronometroAtivo) && document.visibilityState === "visible";
   try{
     if (want && !wakeLock && "wakeLock" in navigator){
       wakeLock = await navigator.wakeLock.request("screen");

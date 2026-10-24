@@ -69,7 +69,13 @@ export async function syncOngoing(treino, caminhada){
   if (caminhada){
     if (await ensureNotifPermission()) showOngoing("caminhada", { title: "Caminhada em andamento", text: "Toque para fazer o check-out", when: new Date(caminhada.start).getTime(), countDown: false });
   } else hideOngoing("caminhada");
-  try{ if (treino) await KA.keepAwake(); else await KA.allowSleep(); }catch(e){}
+  try{ if (treino || telaExtra) await KA.keepAwake(); else await KA.allowSleep(); }catch(e){}
+}
+// cronômetros de treino: mantêm a tela ligada enquanto rodam (além do treino em andamento)
+let telaExtra = false;
+export async function telaLigadaExtra(v){
+  telaExtra = v; if (!isNative) return;
+  try{ if (v) await KA.keepAwake(); }catch(e){}
 }
 
 /* ---------- descanso ---------- */

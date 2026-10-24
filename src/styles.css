@@ -220,6 +220,12 @@ th{color:var(--ink-2);font-weight:600}
 .expl > div{background:var(--surface-2);border-radius:var(--radius-sm);padding:10px 12px;margin-top:4px}
 .expl p{margin:0 0 8px}
 .expl p:last-child{margin-bottom:0}
+/* cronômetros */
+.cr-box{text-align:center;margin-top:12px;border:2px solid transparent;transition:border-color .2s}
+.cr-box[data-fase="esforco"]{border-color:var(--strength)}
+.cr-box[data-fase="descanso"]{border-color:var(--walk)}
+.cr-tempo{font-family:var(--display);font-weight:800;font-size:84px;line-height:1;letter-spacing:-3px;font-variant-numeric:tabular-nums;margin:10px 0 14px}
+.cr-box.final .cr-tempo{color:var(--danger)}
 /* saúde */
 .grupo-exame{margin-top:10px}
 .grupo-exame summary{cursor:pointer;padding:2px 0}

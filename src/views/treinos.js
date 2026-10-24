@@ -9,6 +9,7 @@ import { sugestao } from "../progressao.js";
 import { fotoHtml } from "./fotos.js";
 import { dorExHtml, DOR_MIN, limpa } from "./dorex.js";
 import { baixarPlano } from "../planoexport.js";
+import { cronometrosHtml, cronometrosAfter } from "./cronometros.js";
 import { semanaHtml as organizarSemanaHtml } from "./semana.js";
 
 // Faixa da semana do programa de 12 semanas (deload em destaque)
@@ -48,6 +49,7 @@ views.treinos = {
     if (ui.sub === "plano") return viewPlanoEditor();
     if (ui.sub === "resumo") return viewResumo();
     if (ui.sub === "semana") return organizarSemanaHtml();
+    if (ui.sub === "cronometros") return cronometrosHtml();
     const at = active("treino");
     if (at) return viewAtivo(at);
     const p = activePlan();
@@ -55,7 +57,7 @@ views.treinos = {
     const Ls = planLetters(p);
     if (!ui.treino || !p.treinos[ui.treino]) ui.treino = treinoForDay(p, new Date().getDay()) || Ls[0];
     const L = ui.treino, t = p.treinos[L];
-    let h = `<div class="between" style="margin-bottom:10px"><div class="small muted">${esc(p.nome)}</div><div class="row" style="gap:14px"><button class="linkbtn" data-act="goSemana">Semana</button><button class="linkbtn" data-act="goPlanos2">Planos</button><button class="linkbtn" data-act="goEditor">Editar plano</button><button class="linkbtn" data-act="planoExportar">Exportar</button></div></div>`;
+    let h = `<div class="between" style="margin-bottom:10px"><div class="small muted">${esc(p.nome)}</div><div class="row" style="gap:14px"><button class="linkbtn" data-act="goSemana">Semana</button><button class="linkbtn" data-act="goPlanos2">Planos</button><button class="linkbtn" data-act="goEditor">Editar plano</button><button class="linkbtn" data-act="planoExportar">Exportar</button><button class="linkbtn" data-act="goCronometros">Cronômetros</button></div></div>`;
     h += `<div class="seg" role="group" aria-label="Escolha o treino" style="--n:${Ls.length}">`;
     Ls.forEach(k => { h += `<button type="button" data-act="pickTreino" data-t="${k}" aria-pressed="${k === L}">${k}<span>${(p.treinos[k].dias || []).map(d => ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][d]).join(", ") || "livre"}</span></button>`; });
     h += `</div>`;
@@ -83,7 +85,7 @@ actions.openTreino = el => { ui.treino = el.dataset.t; go("treinos"); };
 /* ---------- treino em andamento ---------- */
 function viewAtivo(s){
   const info = semanaInfo(planoDaSessao(s), new Date(s.start));
-  let h = `<div class="panel live"><div class="today-head"><div class="big-letter">${esc(s.treino)}</div><div style="flex:1"><h3>Treino ${esc(s.treino)} em andamento</h3><div class="elapsed" data-since="${esc(s.start)}">0:00</div><div class="small" data-aviso70="${esc(s.start)}" hidden style="color:var(--walk);font-weight:600">Passou de 70 min. Em déficit, 60 a 70 min rendem mais.</div><div class="small muted">Check-in: ${dorLabel().toLowerCase()} ${s.pre && s.pre.dor != null ? s.pre.dor : "–"}/10, energia ${s.pre && s.pre.energia ? s.pre.energia : "–"}/5</div></div></div>${semanaHtml(info)}</div>`;
+  let h = `<div class="panel live"><div class="today-head"><div class="big-letter">${esc(s.treino)}</div><div style="flex:1"><h3>Treino ${esc(s.treino)} em andamento</h3><div class="elapsed" data-since="${esc(s.start)}">0:00</div><button class="linkbtn" data-act="goCronometros" style="padding:2px 0">Cronômetros (timer e HIIT)</button><div class="small" data-aviso70="${esc(s.start)}" hidden style="color:var(--walk);font-weight:600">Passou de 70 min. Em déficit, 60 a 70 min rendem mais.</div><div class="small muted">Check-in: ${dorLabel().toLowerCase()} ${s.pre && s.pre.dor != null ? s.pre.dor : "–"}/10, energia ${s.pre && s.pre.energia ? s.pre.energia : "–"}/5</div></div></div>${semanaHtml(info)}</div>`;
   const wu = s.warmup || [], items = s.plano.warmup || [];
   if (items.length){
     h += `<h2>Aquecimento</h2><div class="panel warm"><ul>`;
@@ -203,6 +205,8 @@ actions.confirmFinishTreino = () => {
   go("hoje");
   setStatus(s.post.irradiada ? "Treino salvo. Procure avaliação pela dor na perna." : s.post.dorAguda ? "Treino salvo. Observe a dor e procure avaliação se continuar." : "Treino concluído" + (s.kcal ? ` · cerca de ${s.kcal} kcal` : ""));
 };
+
+views.treinos.after = () => { if (ui.sub === "cronometros") cronometrosAfter(); };
 
 /* ---------- exportar o plano (lista de exercícios de cada treino) ---------- */
 actions.planoExportar = () => openModal(`<h3>Exportar o plano de treino</h3>
