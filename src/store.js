@@ -124,7 +124,7 @@ export function imcClasse(v){
 
 /* ---------- gravação ---------- */
 const MAP = { sessions: "sessions", measurements: "measurements", plans: "plans", exercises: "exOverrides", fotos: "fotos",
-  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames", dobras: "dobras", progresso: "progresso", alimentos: "alimentos", refeicoes: "refeicoes", agua: "agua", refSalvas: "refSalvas", testes: "testes" };
+  doses: "doses", sintomas: "sintomas", eventos: "eventos", fita: "fita", exames: "exames", dobras: "dobras", progresso: "progresso", alimentos: "alimentos", refeicoes: "refeicoes", agua: "agua", refSalvas: "refSalvas", habitos: "habitos", testes: "testes" };
 const timers = {}, chains = {};
 function objFor(store, id){
   if (store === "kv") return id === "profile" ? S.profile : id === "saude" ? S.saude : S.settings;

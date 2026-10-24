@@ -34,7 +34,10 @@ export function scheduleAll(){
   alvo.setHours(8, 0, 0, 0);
   if (alvo <= new Date() || feito){ const prox = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 1); alvo = primeiroSabado(prox); alvo.setHours(8, 0, 0, 0); }
   const avaliacao = { at: alvo, title: "Dia de avaliação", body: "Teste de sentar e levantar e medidas do mês. Leva poucos minutos." };
-  return scheduleReminders({ treinos, walk, dose, avaliacao });
+  // check-in da noite (módulo Saúde), texto genérico
+  const lc = Object.assign({ ativo: true, hora: "21:00" }, (sd && sd.lembreteCheckin) || {});
+  const checkin = sd && sd.ativo && lc.ativo ? { hora: lc.hora, title: "Check-in da noite", body: "Sono, fome, humor e estresse: leva 20 segundos." } : null;
+  return scheduleReminders({ treinos, walk, dose, avaliacao, checkin });
 }
 
 function primeiroSabado(d){ const x = new Date(d.getFullYear(), d.getMonth(), 1, 12); while (x.getDay() !== 6) x.setDate(x.getDate() + 1); return x; }

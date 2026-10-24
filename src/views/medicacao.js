@@ -12,6 +12,8 @@ import { progressoHtml, sessoesFotos } from "./progresso.js";
 import { alimentacaoHtml } from "./alimentacao.js";
 import { vitaminasHtml } from "./vitaminas.js";
 import { examesHtml, examesAfter } from "./exames.js";
+import { habitosHtml } from "./habitos.js";
+import { checkinDe } from "../habitos.js";
 import { ultimoValor } from "../fita.js";
 import { mediaAtual, ritmo } from "../peso.js";
 import {
@@ -70,11 +72,13 @@ views.saude = {
     if (ui.sub === "alimentacao") return alimentacaoHtml();
     if (ui.sub === "vitaminas") return vitaminasHtml();
     if (ui.sub === "exames") return examesHtml();
+    if (ui.sub === "habitos") return habitosHtml();
     const tx = textoAgenda(agenda()), m = mediaAtual(), r = ritmo(4);
     return `<h2 style="margin-top:0">Saúde</h2>${alertasHtml()}
       <button class="panel hub" data-act="goMedicacao"><div><strong>Medicação</strong><div class="small muted">${esc(tx.t)}${tx.s ? " · " + esc(tx.s) : ""}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goPeso" style="margin-top:12px"><div><strong>Peso</strong><div class="small muted">${m != null ? `${fmtNum(m)} kg (média de 7 dias)${r != null ? " · " + (r > 0 ? "+" : r < 0 ? "−" : "") + fmtNum(Math.abs(r), 2) + " kg/semana" : ""}` : "Nenhuma pesagem ainda"}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goExames" style="margin-top:12px"><div><strong>Exames</strong><div class="small muted">Resultados, FLI, TyG, testosterona livre e pendências</div></div><span aria-hidden="true">›</span></button>
+      <button class="panel hub" data-act="goHabitos" style="margin-top:12px"><div><strong>Hábitos e sono</strong><div class="small muted">${checkinDe(ymd(new Date())) ? "Check-in de hoje feito" : "Check-in da noite, STOP-Bang, cigarro e álcool"}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goAlimentacao" style="margin-top:12px"><div><strong>Alimentação</strong><div class="small muted">Banco de alimentos (TACO + USDA) e cadastro pelo rótulo</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goVitaminas" style="margin-top:12px"><div><strong>Vitaminas da semana</strong><div class="small muted">B12, folato, vitamina D, fibra, cálcio, ferro, proteína e gordura boa</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goFotos" style="margin-top:12px"><div><strong>Fotos de progresso</strong><div class="small muted">${(n => n ? `Última sessão em ${ddmm(n.date)} · só neste celular` : "Frente, lado e costas, uma vez por mês")(sessoesFotos().pop())}</div></div><span aria-hidden="true">›</span></button>

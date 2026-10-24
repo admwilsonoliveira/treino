@@ -7,8 +7,9 @@ const DB_NAME = "treino-app";
 // v6: store "progresso" (fotos de progresso, módulo Saúde) — nunca vai para o Google Drive
 // v7: store "alimentos" (alimentos cadastrados pelo rótulo, módulo Saúde)
 // v8: stores "refeicoes", "agua" e "refSalvas" (registro alimentar, módulo Saúde)
-const DB_VERSION = 8;
-export const SAUDE_STORES = ["doses", "sintomas", "eventos", "fita", "exames", "dobras", "progresso", "alimentos", "refeicoes", "agua", "refSalvas"];
+// v9: store "habitos" (check-in da noite, módulo Saúde)
+const DB_VERSION = 9;
+export const SAUDE_STORES = ["doses", "sintomas", "eventos", "fita", "exames", "dobras", "progresso", "alimentos", "refeicoes", "agua", "refSalvas", "habitos"];
 export const SO_NO_APARELHO = ["progresso"]; // fora do backup do Drive; no backup em arquivo só se o usuário escolher
 export const STORES = ["kv", "sessions", "measurements", "plans", "exercises", "fotos", "testes"].concat(SAUDE_STORES);
 

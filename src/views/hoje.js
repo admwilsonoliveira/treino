@@ -8,6 +8,7 @@ import { forcaCardHtml } from "./forca.js";
 import { avaliacaoCardHtml } from "./testes.js";
 import { nutricaoCardHtml } from "./diario.js";
 import { vitaminasCardHtml } from "./vitaminas.js";
+import { checkinCardHtml } from "./habitos.js";
 import { alertasAlimentacao } from "../nutricao.js";
 import { alertaForca, alertaDuracao } from "../forca.js";
 import { alertasPeso } from "../peso.js";
@@ -53,7 +54,7 @@ views.hoje = {
     else if (t && !at && !tDone) h += `<button class="btn strength" data-act="openTreino" data-t="${t}">Abrir treino ${t}</button>`;
     if (!aw) h += `<button class="btn ${t && !tDone ? "ghost" : "walk"}" data-act="startWalk">Iniciar caminhada</button>`;
     h += `</div></div>`;
-    h += medicacaoCardHtml() + (S.saude && S.saude.ativo ? pesoCardHtml() : "") + nutricaoCardHtml() + vitaminasCardHtml() + forcaCardHtml() + avaliacaoCardHtml();
+    h += medicacaoCardHtml() + (S.saude && S.saude.ativo ? pesoCardHtml() : "") + nutricaoCardHtml() + checkinCardHtml() + vitaminasCardHtml() + forcaCardHtml() + avaliacaoCardHtml();
 
     // semana
     const mon = mondayOf(d), nTreinos = p ? new Set(planLetters(p).flatMap(L => p.treinos[L].dias || [])).size : 0;
