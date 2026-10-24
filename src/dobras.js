@@ -20,11 +20,13 @@ export const PONTOS_DOBRA = [
 export const nomeDobra = k => (PONTOS_DOBRA.find(p => p[0] === k) || [, k])[1];
 export const ponto = k => PONTOS_DOBRA.find(p => p[0] === k);
 
-// Sozinho: 3 dobras que dá para medir em si mesmo (+ extras). Com ajuda: 7 dobras + panturrilha (Petroski).
+// Protocolo escolhido à parte de quem mede (o Wilson quis poder fazer as 7 sozinho, em 24/10/2026).
+// A panturrilha medial nas 7 dobras completa o Petroski (subescapular, tríceps, suprailíaca, panturrilha).
 export const PROTOCOLOS = {
-  sozinho: { nome: "Sozinho (3 dobras)", pontos: ["peitoral", "abdominal", "coxa"], extras: ["panturrilha_medial", "suprailiaca"] },
-  com_ajuda: { nome: "Com ajuda (7 dobras + Petroski)", pontos: ["peitoral", "axilar_media", "triceps", "subescapular", "abdominal", "suprailiaca", "coxa", "panturrilha_medial"], extras: ["biceps"] }
+  JP3: { nome: "3 dobras", pontos: ["peitoral", "abdominal", "coxa"], extras: ["panturrilha_medial", "suprailiaca"] },
+  JP7: { nome: "7 dobras", pontos: ["peitoral", "axilar_media", "triceps", "subescapular", "abdominal", "suprailiaca", "coxa"], extras: ["panturrilha_medial", "biceps"] }
 };
+export const DIFICEIS_SOZINHO = ["triceps", "subescapular", "axilar_media"];
 // Leituras por ponto: 1 (pedido do Wilson em 24/10/2026: 3 voltas cansavam). Com mais de 1, o app faz rodízio.
 export const VOLTAS = 1;
 export const DIF_MAX_MM = 2;   // leituras do mesmo ponto diferindo mais que isso: pede a 4ª

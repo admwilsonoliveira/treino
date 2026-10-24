@@ -106,30 +106,34 @@ export function drawDobras(){
 
 /* ---------- medir: preparação → rodízio (3 voltas) → 4ª quando precisar → resumo ---------- */
 actions.dobrasNova = () => {
-  const ad = adipometro();
+  const ad = adipometro(), ult = dobrasList().pop(), proto = ult && ult.protocolo === "JP7" ? "JP7" : "JP3";
   openModal(`<h3>Antes de medir</h3>
     <ul class="checklist small"><li>Aperte <strong>ZERO</strong> com o aparelho fechado.</li><li>Confira a bateria (CR2032; o kit tem uma reserva).</li>
       <li>Pele seca, de manhã, em jejum, antes de treinar. Sempre do <strong>lado direito</strong>.</li>
       <li>Pince a dobra com polegar e indicador cerca de 1 cm acima do ponto, posicione o aparelho no ponto e use o <strong>HOLD</strong> uns 2 segundos depois de soltar a pressão.</li>
       <li>Abertura máxima do seu aparelho: <strong>${ad.limite} mm</strong>.</li></ul>
+    <div class="field"><span class="lab">Quantas dobras?</span><div class="yn"><button type="button" data-act="dbProto" data-v="JP3" aria-pressed="${proto === "JP3"}">3 dobras</button><button type="button" data-act="dbProto" data-v="JP7" aria-pressed="${proto === "JP7"}">7 dobras</button></div>
+      <div class="help" id="db-proto"></div></div>
     <div class="field"><span class="lab">Quem vai medir?</span><div class="yn"><button type="button" data-act="dbQuem" data-v="sozinho" aria-pressed="true">Sozinho</button><button type="button" data-act="dbQuem" data-v="com_ajuda" aria-pressed="false">Com ajuda</button></div>
-      <div class="help" id="db-proto">${esc(PROTOCOLOS.sozinho.nome)}: ${PROTOCOLOS.sozinho.pontos.map(nomeDobra).join(", ")}.</div></div>
+      <div class="help" id="db-aviso-quem"></div></div>
     <div class="field" id="db-aval" hidden><label class="lab" for="db-avaliador">Quem mediu (de preferência sempre a mesma pessoa)</label><input id="db-avaliador" class="txt" type="text" maxlength="40" placeholder="Ex.: Marcos"></div>
     <div class="field" id="db-extras"></div>
     <div class="row" style="margin-top:18px"><button class="btn ghost" data-act="closeModal">Voltar</button><button class="btn strength" data-act="dbComecar">Começar</button></div>`,
-  { quem: "sozinho", extras: [] });
+  { quem: "sozinho", proto, extras: [] });
   extrasHtml();
 };
 function extrasHtml(){
-  const p = PROTOCOLOS[modalState.quem];
-  $("#db-proto").textContent = `${p.nome}: ${p.pontos.map(nomeDobra).join(", ")}.`;
+  const p = PROTOCOLOS[modalState.proto];
+  $("#db-proto").textContent = `${p.pontos.map(nomeDobra).join(", ")}.`;
   $("#db-aval").hidden = modalState.quem !== "com_ajuda";
+  $("#db-aviso-quem").textContent = modalState.quem === "sozinho" && modalState.proto === "JP7" ? "Tríceps, subescapular e axilar média são difíceis de medir em si mesmo. Se puder, peça ajuda; se medir sozinho, faça sempre do mesmo jeito." : "";
   $("#db-extras").innerHTML = `<span class="lab">Pontos extras (opcional)</span><div class="chips">${p.extras.map(k => `<button type="button" class="chip" data-act="dbExtra" data-v="${k}" aria-pressed="${modalState.extras.includes(k)}">${esc(nomeDobra(k))}</button>`).join("")}</div>`;
 }
-actions.dbQuem = el => { modalState.quem = el.dataset.v; modalState.extras = []; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false")); extrasHtml(); };
+actions.dbProto = el => { modalState.proto = el.dataset.v; modalState.extras = []; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false")); extrasHtml(); };
+actions.dbQuem = el => { modalState.quem = el.dataset.v; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false")); extrasHtml(); };
 actions.dbExtra = el => { const k = el.dataset.v, i = modalState.extras.indexOf(k); if (i >= 0) modalState.extras.splice(i, 1); else modalState.extras.push(k); el.setAttribute("aria-pressed", String(i < 0)); };
 actions.dbComecar = () => {
-  const p = PROTOCOLOS[modalState.quem];
+  const p = PROTOCOLOS[modalState.proto];
   Object.assign(modalState, { pontos: p.pontos.concat(modalState.extras), leituras: {}, volta: 1, idx: 0, quarta: null, avaliador: ($("#db-avaliador") || {}).value || "" });
   modalState.pontos.forEach(k => { modalState.leituras[k] = []; });
   telaPonto();
@@ -182,7 +186,7 @@ function telaResumo(){
 actions.dbSalvar = () => {
   const st = modalState, id = newId("k"), ad = adipometro();
   S.dobras[id] = { id, date: ymd(new Date()), medidoPor: st.quem, avaliador: st.avaliador || null, adipometro: ad.modelo, limiteMm: ad.limite, leituras: st.leituras,
-    foraDaFaixa: st.pontos.filter(k => oficial(st.leituras[k]) === FORA), protocolo: st.quem === "sozinho" ? "JP3" : "JP7", obs: ($("#db-obs").value || "").trim() || null };
+    foraDaFaixa: st.pontos.filter(k => oficial(st.leituras[k]) === FORA), protocolo: st.proto, obs: ($("#db-obs").value || "").trim() || null };
   flush("dobras", id); closeModal(); setStatus("Dobras salvas"); ui.tab = "saude"; ui.sub = "dobras"; render(); window.scrollTo(0, 0);
 };
 actions.dobrasApagar = el => { if (!confirm("Apagar esta medição de dobras?")) return; delete S.dobras[el.dataset.id]; flush("dobras", el.dataset.id); render(); };

@@ -1,7 +1,7 @@
 // Aba Perfil: dados do usuário, medidas corporais (peso e bioimpedância), plano ativo, caminhada e backup.
 import { S, save, flush, setStatus, measurementsList, latestWeight, activePlan, exportData, validateBackup, restoreData, imc, imcClasse, restOf, conferencia } from "../store.js";
 import { ui, views, actions, changes, render, go, openModal, closeModal, modalState } from "../ui.js";
-import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, ageFrom, newId, restLabel, DIAS_CURTO, downloadBlob, $ } from "../util.js";
+import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, ageFrom, newId, restLabel, DIAS_CURTO, downloadBlob, horaCampoHtml, lerHora, $ } from "../util.js";
 import { requestPersist } from "../db.js";
 import { isNative, notifStatus, ensureNotifPermission, openExactAlarmSettings, testNotification } from "../native.js";
 import { APK_URL } from "../update.js";
@@ -107,7 +107,7 @@ function modalMedida(id){
     <p class="small muted" style="margin-top:6px">Só o peso é obrigatório. Os outros campos vêm da balança de bioimpedância, se você tiver.</p>
     <div class="grid2">
       <div class="field"><label class="lab" for="md-date">Data da pesagem</label><input id="md-date" class="txt" type="date" value="${esc(m.date)}"></div>
-      <div class="field"><label class="lab" for="md-hora">Hora da pesagem</label><input id="md-hora" class="txt" type="time" value="${esc(m.hora || "")}"></div>
+      <div class="field"><label class="lab" for="md-hora-h">Hora da pesagem</label>${horaCampoHtml("md-hora", m.hora)}</div>
     </div>
     <div class="help">Pesou mais cedo? Toque na hora e ajuste.</div>
     <div class="grid2">
@@ -132,7 +132,7 @@ actions.saveMedida = el => {
   // mantém os campos que este formulário não mostra (jejum, hora, fonte, marcações da importação)
   const antes = Object.assign({}, S.measurements[id] || {});
   MED_FIELDS.forEach(f => { delete antes[f.k]; });
-  S.measurements[id] = Object.assign(antes, { id, date, peso, hora: $("#md-hora").value || null, jejum: $("#md-jejum").checked, posBanheiro: $("#md-banheiro").checked }, readBioFields());
+  S.measurements[id] = Object.assign(antes, { id, date, peso, hora: lerHora("md-hora"), jejum: $("#md-jejum").checked, posBanheiro: $("#md-banheiro").checked }, readBioFields());
   flush("measurements", id); closeModal(); render();
 };
 actions.delMedida = el => {

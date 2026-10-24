@@ -221,6 +221,10 @@ th{color:var(--ink-2);font-weight:600}
 .expl p{margin:0 0 8px}
 .expl p:last-child{margin-bottom:0}
 /* saúde */
+.bolinha{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
+.hora-campo{display:flex;align-items:center;gap:4px}
+.hora-campo select{flex:1;min-width:0;text-align:center;font-weight:700;font-size:17px;padding:8px 4px}
+.hora-campo span{font-weight:800}
 .guia{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start;margin-top:8px}
 .guia-svg{width:110px;height:auto;display:block}
 .leitura-mm{font-size:28px;font-weight:800;text-align:center;min-height:60px}

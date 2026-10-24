@@ -69,6 +69,7 @@ export function pesoHtml(){
     <p class="small" style="margin:8px 0 0">Faixa provável de gordura: ${Math.round(cp.faixa[0] * 100)}% a ${Math.round(cp.faixa[1] * 100)}%. No estudo (DEXA), cerca de 74% foi gordura e 26% massa magra.</p>
     <p class="small muted" style="margin:6px 0 0">Estimativa do relógio — use como tendência. Recalculada a cada 4 semanas (próxima: ${ddmm(cp.proximo)}).</p></div>`;
 
+  h += `<button class="panel hub" data-act="goMetodos" style="margin-top:16px"><div><strong>Comparar métodos</strong><div class="small muted">% de gordura e massa magra pelo relógio, fita e dobras</div></div><span aria-hidden="true">›</span></button>`;
   const ff = ffmiMensal();
   if (ff.length) h += `<h2>Índice de massa magra (FFMI)</h2><div class="panel"><div class="stats" style="margin-top:0;grid-template-columns:repeat(${Math.min(4, ff.length)},1fr)">${ff.slice(-4).map(x => `<div class="stat"><div class="v">${fmtNum(x.v)}</div><div class="l">${mesNome(x.mes)}</div></div>`).join("")}</div>
     <p class="small muted" style="margin:8px 0 0">(peso − massa gorda) ÷ altura². Mantê-lo estável enquanto o peso cai indica que o músculo está sendo preservado. Média dos homens: 18 a 20.</p></div>`;

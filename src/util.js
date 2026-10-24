@@ -32,6 +32,14 @@ export function ageFrom(birth){
   if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--;
   return a >= 0 && a < 120 ? a : null;
 }
+// Hora em dois seletores (hora e minuto): o campo type="time" travava no app Android
+export function horaCampoHtml(id, valor){
+  const [h, m] = String(valor || "").split(":").map(Number);
+  // sem hora gravada: começa em "--" para não inventar 00:00
+  const op = (n, sel) => (sel < 0 ? `<option value="" selected>--</option>` : "") + Array.from({ length: n }, (_, i) => `<option value="${pad(i)}" ${i === sel ? "selected" : ""}>${pad(i)}</option>`).join("");
+  return `<div class="hora-campo"><select id="${id}-h" class="txt" aria-label="Hora">${op(24, isFinite(h) ? h : -1)}</select><span>:</span><select id="${id}-m" class="txt" aria-label="Minuto">${op(60, isFinite(m) ? m : -1)}</select></div>`;
+}
+export const lerHora = id => { const h = document.getElementById(id + "-h"), m = document.getElementById(id + "-m"); return h && m && h.value !== "" ? h.value + ":" + (m.value || "00") : null; };
 export const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 export const DIAS_CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 export function downloadBlob(filename, data, type){

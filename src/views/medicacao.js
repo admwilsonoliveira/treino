@@ -2,11 +2,12 @@
 import { Chart, LineController, LineElement, PointElement, LinearScale, Tooltip, Legend } from "chart.js";
 import { S, flush, setStatus } from "../store.js";
 import { ui, views, actions, render, go, openModal, closeModal, modalState } from "../ui.js";
-import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, DIAS, $ } from "../util.js";
+import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, DIAS, horaCampoHtml, lerHora, $ } from "../util.js";
 import { saudeAtiva } from "../saude.js";
 import { pesoHtml, drawPeso } from "./peso.js";
 import { fitaHtml, drawFita } from "./fita.js";
 import { dobrasHtml, drawDobras, dobrasResumo } from "./dobras.js";
+import { metodosHtml, drawMetodos } from "./metodos.js";
 import { ultimoValor } from "../fita.js";
 import { mediaAtual, ritmo } from "../peso.js";
 import {
@@ -60,16 +61,18 @@ views.saude = {
     if (ui.sub === "peso") return pesoHtml();
     if (ui.sub === "medidas") return fitaHtml();
     if (ui.sub === "dobras") return dobrasHtml();
+    if (ui.sub === "metodos") return metodosHtml();
     const tx = textoAgenda(agenda()), m = mediaAtual(), r = ritmo(4);
     return `<h2 style="margin-top:0">Saúde</h2>${alertasHtml()}
       <button class="panel hub" data-act="goMedicacao"><div><strong>Medicação</strong><div class="small muted">${esc(tx.t)}${tx.s ? " · " + esc(tx.s) : ""}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goPeso" style="margin-top:12px"><div><strong>Peso</strong><div class="small muted">${m != null ? `${fmtNum(m)} kg (média de 7 dias)${r != null ? " · " + (r > 0 ? "+" : r < 0 ? "−" : "") + fmtNum(Math.abs(r), 2) + " kg/semana" : ""}` : "Nenhuma pesagem ainda"}</div></div><span aria-hidden="true">›</span></button>
+      <button class="panel hub" data-act="goMetodos" style="margin-top:12px"><div><strong>Comparar métodos</strong><div class="small muted">Gordura e massa magra: relógio, fita e dobras</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goRelCompleto" style="margin-top:12px"><div><strong>Relatório completo</strong><div class="small muted">12 meses, para a IA ou o médico</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goDobras" style="margin-top:12px"><div><strong>Dobras cutâneas</strong><div class="small muted">${esc(dobrasResumo() || "Nenhuma medida ainda")}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goTestes" style="margin-top:12px"><div><strong>Testes mensais</strong><div class="small muted">Sentar e levantar e força de preensão</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goMedidas" style="margin-top:12px"><div><strong>Medidas com fita</strong><div class="small muted">${(c => c ? `Cintura ${fmtNum(c.v)} cm em ${ddmm(c.date)}` : "Nenhuma medida em jejum ainda")(ultimoValor("cintura_umbigo"))}</div></div><span aria-hidden="true">›</span></button>`;
   },
-  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); if (ui.sub === "medidas") drawFita(); if (ui.sub === "dobras") drawDobras(); }
+  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); if (ui.sub === "medidas") drawFita(); if (ui.sub === "dobras") drawDobras(); if (ui.sub === "metodos") drawMetodos(); }
 };
 
 function medicacaoHtml(){
@@ -131,7 +134,7 @@ function modalDose(id){
   openModal(`<h3>${id ? "Editar dose" : "Registrar dose"}</h3>
     <div class="grid2">
       <div class="field"><label class="lab" for="ds-date">Data</label><input id="ds-date" class="txt" type="date" value="${esc(x.date)}"></div>
-      <div class="field"><label class="lab" for="ds-hora">Hora</label><input id="ds-hora" class="txt" type="time" value="${esc(x.hora || "")}"></div>
+      <div class="field"><label class="lab" for="ds-hora-h">Hora</label>${horaCampoHtml("ds-hora", x.hora)}</div>
     </div>
     <div class="field"><span class="lab">Situação</span><div class="scale" style="--n:3">${STATUS_DOSE.map(([k, l]) => `<button type="button" data-act="dsStatus" data-v="${k}" aria-pressed="${x.status === k}">${l}</button>`).join("")}</div></div>
     <div id="ds-aplic" ${x.status === "aplicada" ? "" : "hidden"}>
@@ -158,7 +161,7 @@ actions.dsLocal = el => {
   el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false"));
 };
 actions.doseSalvar = el => {
-  const id = el.dataset.id || newId("d"), date = $("#ds-date").value, hora = $("#ds-hora").value, st = modalState.status, mg = num($("#ds-mg").value);
+  const id = el.dataset.id || newId("d"), date = $("#ds-date").value, hora = lerHora("ds-hora"), st = modalState.status, mg = num($("#ds-mg").value);
   if (!date){ $("#ds-err").textContent = "Informe a data."; return; }
   if (st === "aplicada" && !(mg > 0 && mg <= 30)){ $("#ds-err").textContent = "Informe a dose em mg."; return; }
   // intervalo mínimo de 72 h: avisa, mas deixa registrar
@@ -198,7 +201,7 @@ function modalSintoma(id, tipoInicial){
     <div class="field"><span class="lab">Intensidade (0 a 10)</span><div class="rng"><input type="range" min="0" max="10" step="1" value="${x.intensidade != null ? x.intensidade : 3}" id="sn-int" aria-label="Intensidade de 0 a 10" oninput="this.nextElementSibling.textContent=this.value"><output>${x.intensidade != null ? x.intensidade : 3}</output></div></div>
     <div class="grid2">
       <div class="field"><label class="lab" for="sn-date">Data</label><input id="sn-date" class="txt" type="date" value="${esc(x.date)}"></div>
-      <div class="field"><label class="lab" for="sn-hora">Hora</label><input id="sn-hora" class="txt" type="time" value="${esc(x.hora || "")}"></div>
+      <div class="field"><label class="lab" for="sn-hora-h">Hora</label>${horaCampoHtml("sn-hora", x.hora)}</div>
     </div>
     <div class="field"><label class="lab" for="sn-obs">Observação</label><input id="sn-obs" class="txt" type="text" value="${esc(x.obs || "")}"></div>
     <div class="err" id="sn-err"></div>
@@ -222,7 +225,7 @@ actions.sintomaSalvar = el => {
   const id = el.dataset.id || newId("y"), date = $("#sn-date").value;
   if (!modalState.tipo){ $("#sn-err").textContent = "Escolha o que você sentiu."; return; }
   if (!date){ $("#sn-err").textContent = "Informe a data."; return; }
-  S.sintomas[id] = Object.assign({}, S.sintomas[id] || {}, { id, date, hora: $("#sn-hora").value || null, tipo: modalState.tipo,
+  S.sintomas[id] = Object.assign({}, S.sintomas[id] || {}, { id, date, hora: lerHora("sn-hora"), tipo: modalState.tipo,
     intensidade: parseInt($("#sn-int").value, 10), sinais: modalState.sinais, obs: $("#sn-obs").value.trim() || null });
   flush("sintomas", id);
   const fila = modalState.fila;
