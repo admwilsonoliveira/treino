@@ -28,7 +28,7 @@ export function saudePanelHtml(){
     <div class="between"><strong>Acompanhamento ativo</strong><span class="tag">desde ${ddmmyyyy((sd.consentimentoEm || "").slice(0, 10))}</span></div>
     ${med ? `<p class="small" style="margin:8px 0 0">Medicação: ${med}</p>` : ""}
     <p class="small muted" style="margin:6px 0 0">${pl(c.doses, "dose")} · ${pl(c.fita, "medida com fita", "medidas com fita")} · ${pl(c.exames, "exame")} · ${pl(c.eventos, "evento")}</p>
-    <div class="row" style="margin-top:12px"><button class="btn ghost" data-act="saudeImportar">Importar histórico</button></div>
+    <div class="row" style="margin-top:12px"><button class="btn strength" data-act="goSaude">Abrir Saúde</button><button class="btn ghost" data-act="saudeImportar">Importar histórico</button></div>
     <input type="file" id="histFile" accept="application/json,.json" hidden>
     <div class="row" style="margin-top:4px"><button class="linkbtn" data-act="saudeTermo">Ler o termo</button><button class="linkbtn danger" data-act="saudeApagar">Apagar meus dados de saúde</button></div>
   </div>`;

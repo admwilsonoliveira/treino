@@ -134,7 +134,7 @@ export function flush(store, id, quiet = false){
       if (o) await db.put(store, o); else await db.del(store, id);
       setStatus("Salvo");
       if (!quiet){
-        if (store === "plans" || (store === "kv" && id === "settings")) dataHooks.forEach(f => { try{ f(); }catch(e){} });
+        if (store === "plans" || (store === "kv" && (id === "settings" || id === "saude"))) dataHooks.forEach(f => { try{ f(); }catch(e){} });
         changeHooks.forEach(f => { try{ f(store, id); }catch(e){} });
       }
     }catch(e){

@@ -25,7 +25,10 @@ export function scheduleAll(){
     const hora = minus(w.hora, L.caminhada.antes);
     w.dias.forEach(d => walk.push({ weekday: d, hora, title: "Caminhada às " + w.hora, body: L.caminhada.antes ? `Daqui a ${L.caminhada.antes} min: ${String(w.km).replace(".", ",")} km.` : `Hora da caminhada de ${String(w.km).replace(".", ",")} km.` }));
   }
-  return scheduleReminders({ treinos, walk });
+  // dia da dose (módulo Saúde): o texto não cita o remédio, porque aparece na tela de bloqueio
+  const sd = S.saude, dose = [];
+  if (sd && sd.ativo && sd.lembrete !== false && sd.diaFixo != null) dose.push({ weekday: sd.diaFixo, hora: sd.horaLembrete || "08:00", title: "Lembrete de saúde", body: "Hoje é dia da sua aplicação. Registre no app depois de aplicar." });
+  return scheduleReminders({ treinos, walk, dose });
 }
 
 let timer = null;
