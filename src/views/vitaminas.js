@@ -2,7 +2,9 @@
 // (com "não quero") e as preferências alimentares. Nunca sugere suplemento.
 import { S, flush, setStatus } from "../store.js";
 import { ui, actions, render, openModal, updateModal, closeModal, modalState } from "../ui.js";
-import { esc, fmtNum, ymd, ddmmyyyy, mondayOf, $ } from "../util.js";
+import { esc, fmtNum, ymd, ddmm, ddmmyyyy, mondayOf, $ } from "../util.js";
+import { addDias } from "../medicacao.js";
+import { refeicoesDo, totaisDe } from "../nutricao.js";
 import { carregarBanco, bancoPronto, itensBanco, alimento, nomeCompleto } from "../alimentos.js";
 import { analise, sugestoesDaSemana, guardarSemana, prefs, MIN_DIAS } from "../vitaminas.js";
 
@@ -53,8 +55,40 @@ export function vitaminasHtml(){
       ${s.notas.map(n => `<p class="small" style="margin:8px 0 0;color:var(--walk)">${esc(n)}</p>`).join("")}</div>`;
   });
   if (sug.some(s => s.experimentar) && (S.saude.experimentarMes || "") !== ymd(new Date()).slice(0, 7)){ S.saude.experimentarMes = ymd(new Date()).slice(0, 7); flush("kv", "saude"); }
+  h += mapaHtml() + avancadoHtml(r);
   h += `<p class="small muted" style="margin-top:14px">O app sugere alimentos, nunca suplementos. Sobre reposição de vitaminas, leve ao seu médico.</p>` + prefsBotao();
   return h;
+}
+/* ---------- mapa de calor: 8 alvos × últimas 12 semanas (cada semana analisada até o domingo) ---------- */
+export function mapaSemanas(n = 12){
+  const seg = ymd(mondayOf(new Date())), out = [];
+  for (let i = n - 1; i >= 0; i--){
+    const ini = addDias(seg, -7 * i), fim = i === 0 ? ymd(new Date()) : addDias(ini, 6), r = analise(fim);
+    if (r.ok) out.push({ semana: ini, r });
+  }
+  return out;
+}
+function mapaHtml(){
+  const ws = mapaSemanas(); if (ws.length < 2) return "";
+  const ks = ws[0].r.itens.map(x => [x.k, x.nome]);
+  return `<h2>Semanas</h2><div class="panel"><div class="scroll-x"><table class="mapa"><thead><tr><th></th>${ws.map(w => `<th>${ddmm(w.semana)}</th>`).join("")}</tr></thead><tbody>
+    ${ks.map(([k, n]) => `<tr><td>${esc(n)}</td>${ws.map(w => { const x = w.r.itens.find(y => y.k === k); return `<td><span class="cel ${x.classe}" title="${x.pct != null ? Math.round(x.pct) + "%" : ""}">${x.pct != null ? Math.round(x.pct) : ""}</span></td>`; }).join("")}</tr>`).join("")}</tbody></table></div>
+    <p class="small muted" style="margin:8px 0 0">% da meta em cada semana (semana de segunda a domingo). Vermelho = baixo, amarelo = atenção, verde = ok.</p></div>`;
+}
+
+/* ---------- Avançado: tabela completa da DRI (só consulta, não gera sugestões) ---------- */
+const DRI = [["vitA", "Vitamina A", "µg", 900], ["vitC", "Vitamina C", "mg", 90], ["vitD", "Vitamina D", "µg", 15], ["vitE", "Vitamina E", "mg", 15], ["vitK", "Vitamina K", "µg", 120],
+  ["b1", "Tiamina (B1)", "mg", 1.2], ["b2", "Riboflavina (B2)", "mg", 1.3], ["b3", "Niacina (B3)", "mg", 16], ["b6", "Vitamina B6", "mg", 1.3], ["b12", "Vitamina B12", "µg", 2.4],
+  ["folato", "Folato", "µg", 400], ["calcio", "Cálcio", "mg", 1000], ["ferro", "Ferro", "mg", 8], ["magnesio", "Magnésio", "mg", 420], ["zinco", "Zinco", "mg", 11],
+  ["potassio", "Potássio", "mg", 3400], ["selenio", "Selênio", "µg", 55], ["fosforo", "Fósforo", "mg", 700], ["cobre", "Cobre", "mg", 0.9], ["fibra", "Fibra", "g", 38]];
+function avancadoHtml(r){
+  const dias = [0, 1, 2, 3, 4, 5, 6].map(i => addDias(r.fim, -i)).filter(d => refeicoesDo(d).length), tot = totaisDe(dias.flatMap(d => refeicoesDo(d)));
+  return `<details class="panel avancado" style="margin-top:16px"><summary>Avançado: todos os nutrientes (DRI)</summary>
+    <p class="small muted" style="margin:8px 0">Só para consulta: não gera sugestões. Vários nutrientes não têm dado em boa parte dos alimentos, então a média pode parecer baixa sem ser.</p>
+    <div class="scroll-x"><table><thead><tr><th>Nutriente</th><th>Média/dia</th><th>DRI</th><th>%</th><th>Com dado</th></tr></thead><tbody>
+    ${DRI.map(([k, n, un, ref]) => { const v = (tot.t[k] || 0) / dias.length, cob = tot.itens ? Math.round((tot.cob[k] || 0) / tot.itens * 100) : 0;
+      return `<tr><td>${esc(n)}</td><td>${cob ? fmtNum(v, v >= 100 ? 0 : 1) + " " + un : "sem dado"}</td><td>${fmtNum(ref, ref < 10 ? 1 : 0)} ${un}</td><td>${cob ? fmtNum(v / ref * 100, 0) + "%" : "–"}</td><td>${cob}%</td></tr>`; }).join("")}</tbody></table></div>
+    <p class="small muted" style="margin:8px 0 0">DRI (IOM), homens de 31 a 50 anos.</p></details>`;
 }
 const prefsBotao = () => `<div class="row" style="margin-top:12px"><button class="btn ghost block" data-act="prefsAbrir">Preferências alimentares</button></div>`;
 actions.vitNaoQuero = el => {

@@ -5,7 +5,7 @@ import { S } from "./store.js";
 import { ymd, num } from "./util.js";
 import { NUTRIENTES } from "./alimentos.js";
 import { addDias, diasAte, dosesList } from "./medicacao.js";
-import { mediaAtual } from "./peso.js";
+import { mediaAtual, valorEm } from "./peso.js";
 import { sessoesSemana } from "./forca.js";
 
 export const TIPOS_REFEICAO = [["cafe", "Café da manhã"], ["lanche_manha", "Lanche da manhã"], ["almoco", "Almoço"], ["lanche_tarde", "Lanche da tarde"], ["jantar", "Jantar"], ["ceia", "Ceia"], ["pre_treino", "Pré-treino"], ["pos_treino", "Pós-treino"]];
@@ -101,4 +101,22 @@ export function favoritosAutomaticos(){
   const top = Object.entries(conta).sort((a, b) => b[1] - a[1]).slice(0, 20).map(x => x[0]);
   sd.favAlimentos = [...new Set((sd.favAlimentos || []).concat(top))]; sd.favAutoFeito = new Date().toISOString();
   return true;
+}
+
+/* ---------- gasto calórico real (TDEE adaptativo, seção 4.7) ---------- */
+// ingestão média registrada − (variação da tendência de peso × 7.700 kcal/kg) ÷ dias, numa janela de 28 dias
+// (ou 21, se a de 28 não tiver registro suficiente). Só com ≥ 80% dos dias registrados. É informação: não vira meta.
+export const KCAL_POR_KG = 7700;
+export function tdeeAdaptativo(fim = addDias(hoje(), -1)){
+  for (const n of [28, 21]){
+    const ini = addDias(fim, -(n - 1)), dias = Array.from({ length: n }, (_, i) => addDias(ini, i));
+    const reg = dias.filter(d => refeicoesDo(d).length);
+    const pIni = valorEm(ini), pFim = valorEm(fim);
+    if (reg.length / n < 0.8 || pIni == null || pFim == null) continue;
+    const ingestao = reg.reduce((s, d) => s + (totalDia(d).t.kcal || 0), 0) / reg.length;
+    const dPeso = pFim - pIni;
+    return { ok: true, dias: n, registrados: reg.length, ingestao, dPeso, tdee: ingestao - dPeso * KCAL_POR_KG / n, de: ini, ate: fim };
+  }
+  const reg28 = Array.from({ length: 28 }, (_, i) => addDias(fim, -i)).filter(d => refeicoesDo(d).length).length;
+  return { ok: false, registrados: reg28, precisa: Math.ceil(21 * 0.8) };
 }

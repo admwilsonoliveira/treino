@@ -8,6 +8,8 @@ import { TIPOS_REFEICAO, nomeTipo, tipoPelaHora, refeicoesDo, aguaDo, totalDia, 
   alertasAlimentacao, diaDeDose, semanaProteinaTreino, alimentosRecentes, favoritosAutomaticos } from "../nutricao.js";
 import { addDias, horaAgora } from "../medicacao.js";
 import { PERIODOS_ALIM, baixarRelAlimentar } from "../relalimentar.js";
+import { tdeeAdaptativo } from "../nutricao.js";
+import { diagnostico } from "../diagnostico.js";
 
 const hoje = () => ymd(new Date());
 const kg = v => fmtNum(v, v >= 100 ? 0 : 1);
@@ -80,7 +82,20 @@ export function diarioHtml(){
     <div class="stat"><div class="v">${s.diasNoPiso}/${s.diasRegistrados || 0}</div><div class="l">dias registrados com proteína ≥ ${m.prot.piso} g</div></div>
     <div class="stat"><div class="v">${s.sessoesForca}/3</div><div class="l">sessões de força na semana</div></div></div>
     <p class="small muted" style="margin:8px 0 0">Proteína sem treino de força não basta para preservar o músculo, e vice-versa (consenso de 2025 sobre GLP-1).</p></div>`;
+  h += tdeeHtml();
   return h;
+}
+// gasto calórico real (pelo que você comeu e pelo que a balança mostrou) ao lado das estimativas por fórmula
+function tdeeHtml(){
+  const t = tdeeAdaptativo(), dg = diagnostico() || {};
+  let h = `<h2>Gasto calórico real</h2><div class="panel">`;
+  if (t.ok){
+    h += `<div class="stat-num" style="font-size:32px">${fmtNum(t.tdee, 0)}<span class="small muted" style="font-weight:600;letter-spacing:0"> kcal/dia</span></div>
+      <p class="small" style="margin:6px 0 0">Nos últimos ${t.dias} dias você comeu em média <strong>${fmtNum(t.ingestao, 0)} kcal</strong> (${t.registrados} dias registrados) e a tendência do peso variou <strong>${t.dPeso > 0 ? "+" : t.dPeso < 0 ? "−" : ""}${fmtNum(Math.abs(t.dPeso), 1)} kg</strong>.</p>`;
+  } else h += `<p class="small" style="margin:0">Registre mais dias para estimar seu gasto real: é preciso registrar a alimentação em pelo menos 80% dos dias de uma janela de 3 a 4 semanas, com pesagens no começo e no fim (agora: ${t.registrados} dos últimos 28 dias).</p>`;
+  const fx = [dg.gastoDia ? `pela fórmula e o plano: ${fmtNum(dg.gastoDia, 0)} kcal` : null, dg.gastoReal ? `pela fórmula e os treinos feitos: ${fmtNum(dg.gastoReal, 0)} kcal` : null].filter(Boolean);
+  if (fx.length) h += `<p class="small muted" style="margin:8px 0 0">Estimativas do app ${fx.join(" · ")}.</p>`;
+  return h + `<p class="small muted" style="margin:8px 0 0">Só informação: não é meta de calorias. Leve ao seu médico ou nutricionista.</p></div>`;
 }
 actions.diaAlim = el => { const d = addDias(ui.diaAlim || hoje(), +el.dataset.v); ui.diaAlim = d > hoje() ? hoje() : d; render(); };
 actions.aguaMais = el => {

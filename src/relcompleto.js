@@ -11,7 +11,8 @@ import { dobrasList, soma, percentuais, nomeDobra, valorDobra, FORA, adipometro 
 import { indiceForca, ancoras, serie1RM, progressao, variacao4, duracaoMin } from "./forca.js";
 import { rankingDor } from "./views/dorex.js";
 import { dadosPlano } from "./planoexport.js";
-import { refeicoesDo, totaisDe, aguaTotal, metas, nomeTipo } from "./nutricao.js";
+import { refeicoesDo, totaisDe, aguaTotal, metas, nomeTipo, tdeeAdaptativo } from "./nutricao.js";
+import { analise } from "./vitaminas.js";
 import { mondayOf } from "./util.js";
 
 const f = (v, d = 1) => (v == null || !isFinite(v) ? "–" : fmtNum(v, d));
@@ -165,6 +166,8 @@ export function dadosCompletos(){
       sa.tabelas.push({ t: "O que foi registrado nos últimos 7 dias com registro", soMd: true, head: ["Data", "Refeição", "Hora", "Itens", "Proteína (g)", "kcal"],
         body: ult7.flatMap(d => refeicoesDo(d).map(r => [dt(d), nomeTipo(r.tipo), r.hora || "–", (r.itens || []).map(it => `${it.nome} (${it.medida || f(it.g, 0) + " g"})`).join("; "),
           f((r.itens || []).reduce((s, it) => s + (num(it.n && it.n.prot) || 0), 0), 0), f((r.itens || []).reduce((s, it) => s + (num(it.n && it.n.kcal) || 0), 0), 0)])) });
+      const td = tdeeAdaptativo(); if (td.ok) sa.paragrafos.push(`Gasto calórico real (adaptativo): ${f(td.tdee, 0)} kcal/dia nos últimos ${td.dias} dias.`);
+      const an = analise(); if (an.ok) sa.paragrafos.push("Nutrientes-alvo da última semana: " + an.itens.map(x => `${x.nome} ${x.pct == null ? "–" : f(x.pct, 0) + "%"}${x.exame ? " (exame também baixo)" : ""}`).join("; ") + ".");
       sa.notas.push("Valores dos alimentos: TACO 4ª ed. (NEPA/Unicamp) e USDA FoodData Central (CC0); alimentos de rótulo informados pelo usuário. Nutriente sem dado não entra na soma.");
     }
     /* eventos */

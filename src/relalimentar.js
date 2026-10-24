@@ -3,7 +3,8 @@
 // Usa o mesmo gerador de Markdown e PDF do relatório completo.
 import { S } from "./store.js";
 import { fmtNum, ymd, ddmmyyyy, mondayOf, downloadBlob, DIAS } from "./util.js";
-import { refeicoesDo, aguaTotal, totaisDe, metas, nomeTipo, proteinaDaRefeicao } from "./nutricao.js";
+import { refeicoesDo, aguaTotal, totaisDe, metas, nomeTipo, proteinaDaRefeicao, tdeeAdaptativo } from "./nutricao.js";
+import { mapaSemanas } from "./views/vitaminas.js";
 import { addDias } from "./medicacao.js";
 import { emMarkdown, emPdf } from "./relcompleto.js";
 
@@ -53,6 +54,14 @@ export function dadosAlimentacao(per = "7"){
     return [n, cob ? f(v, un === "µg" || un === "g" ? 1 : 0) + " " + un : "sem dado", ref ? f(ref, ref < 10 ? 1 : 0) + " " + un : "–", ref && cob ? f(v / ref * 100) + "%" : "–", cob + "%"];
   }) });
   s3.notas.push("Alimento sem dado de um nutriente não entra na soma, então o valor real tende a ser maior quando a coluna \"itens com dado\" é baixa. Referências: DRI (IOM) para homens de 31 a 50 anos. O app não prescreve suplementos: leve ao seu médico.");
+
+  // 3b. os 8 nutrientes-alvo semana a semana e o gasto calórico real
+  const ws = mapaSemanas(12).filter(w => w.semana >= addDias(de, -6));
+  if (ws.length) sec("Nutrientes-alvo por semana (% da meta)").tabelas.push({ larga: true, head: ["Semana de"].concat(ws[0].r.itens.map(x => x.nome)),
+    body: ws.map(w => [dt(w.semana)].concat(w.r.itens.map(x => x.pct == null ? "–" : f(x.pct) + "%" + (x.exame ? "*" : "")))) });
+  const td = tdeeAdaptativo();
+  sec("Gasto calórico real").paragrafos.push(td.ok ? `${f(td.tdee)} kcal/dia nos últimos ${td.dias} dias (ingestão média registrada ${f(td.ingestao)} kcal; variação da tendência de peso ${fmtNum(td.dPeso, 1)} kg). Só informação, não é meta.`
+    : `Ainda não calculado: é preciso registrar a alimentação em pelo menos 80% dos dias de uma janela de 3 a 4 semanas (registrados nos últimos 28 dias: ${td.registrados}).`);
 
   // 4. dia a dia
   const s4 = sec("Dia a dia");

@@ -221,6 +221,10 @@ th{color:var(--ink-2);font-weight:600}
 .expl p{margin:0 0 8px}
 .expl p:last-child{margin-bottom:0}
 /* saúde */
+table.mapa td,table.mapa th{padding:3px;text-align:center;font-size:12px}
+table.mapa td:first-child{text-align:left;white-space:nowrap}
+.cel{display:block;min-width:30px;border-radius:6px;padding:4px 0;font-weight:700;font-size:11px;color:#fff}
+.cel.baixo{background:var(--danger)} .cel.atencao{background:var(--walk);color:#2a1d00} .cel.ok{background:var(--sucesso);color:#06210f}
 .vit-linha{margin-top:10px}
 .selo-exame{font-size:10px;font-weight:800;padding:2px 6px;border-radius:6px;background:var(--danger-soft);color:var(--danger)}
 .data-campo{display:grid;grid-template-columns:1fr 1.2fr 1.4fr;gap:4px}
