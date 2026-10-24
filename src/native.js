@@ -145,3 +145,20 @@ export function openExternal(url){
   if (isNative && BR) return BR.open({ url }).catch(() => { location.href = url; });
   window.open(url, "_blank", "noopener");
 }
+
+/* ---------- voz (cronômetros) ---------- */
+// APK: motor de voz do Android (plugin, carregado só quando usado); navegador: speechSynthesis
+let TTS = null;
+export async function falar(texto){
+  try{
+    if (isNative){
+      TTS = TTS || (await import("@capacitor-community/text-to-speech")).TextToSpeech;
+      await TTS.speak({ text: texto, lang: "pt-BR", rate: 1.05, volume: 1 });
+      return;
+    }
+    if (!window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(texto); u.lang = "pt-BR"; u.rate = 1.05;
+    const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.replace("_", "-").toLowerCase().startsWith("pt-br")); if (v) u.voice = v;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(e){}
+}

@@ -96,7 +96,7 @@ function viewAtivo(s){
   s.plano.ex.forEach(it => {
     const ex = getEx(it.exId), sets = ensureSets(s, it, seriesNaSemana(it, ex, info)), last = lastSetsFor(it.exId, s.id), unit = ex.load === false ? "" : (ex.unit || "kg");
     const sg = sugestao(it, ex, s, info);
-    h += `<div class="ex" id="ex-${esc(it.exId)}"><div class="ex-head"><div class="ex-top">${S.fotos[it.exId] ? fotoHtml(it.exId) : ""}<div><h3>${esc(ex.nome)}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}</div>${S.fotos[it.exId] ? "" : fotoHtml(it.exId)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div><p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>`;
+    h += `<div class="ex" id="ex-${esc(it.exId)}"><div class="ex-head"><div class="ex-top">${S.fotos[it.exId] ? fotoHtml(it.exId) : ""}<div><h3>${esc(ex.nome)}${it.extra ? ' <span class="tag">extra</span>' : ""}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}</div>${S.fotos[it.exId] ? "" : fotoHtml(it.exId)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div><p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>`;
     if (last) h += `<div class="between" style="align-items:center"><div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div><button class="linkbtn" style="white-space:nowrap;margin-left:8px" data-act="repetir" data-ex="${esc(it.exId)}">↺ Repetir</button></div>`;
     h += sugHtml(sg);
     h += `<div class="set-cols"><span>Série</span><span>${ex.load === false ? "" : "Carga (" + esc(unit) + ")"}</span><span>${ex.tipo === "core" && ex.load === false ? "Reps ou s" : "Repetições"}</span><span></span></div><div class="sets">`;
@@ -107,11 +107,21 @@ function viewAtivo(s){
       h += `<input type="text" inputmode="numeric" id="r-${esc(it.exId)}-${i}" aria-label="Repetições série ${i + 1}" data-act="reps" data-ex="${esc(it.exId)}" data-i="${i}" value="${esc(x.reps)}" placeholder="${ph.reps != null ? ph.reps : ""}">`;
       h += `<button type="button" class="chk ${x.ok ? "on" : ""}" aria-pressed="${!!x.ok}" aria-label="Concluir série ${i + 1}" data-act="ok" data-ex="${esc(it.exId)}" data-i="${i}">✓</button></div>`;
     });
-    h += `</div><div class="row" style="justify-content:space-between"><button class="linkbtn" data-act="addSet" data-ex="${esc(it.exId)}">Adicionar série</button><button class="linkbtn" data-act="rest" data-s="${restOf(it)}">Descanso ${restLabel(restOf(it))}</button></div></div>`;
+    h += `</div><div class="row" style="justify-content:space-between"><button class="linkbtn" data-act="addSet" data-ex="${esc(it.exId)}">Adicionar série</button><button class="linkbtn" data-act="rest" data-s="${restOf(it)}">Descanso ${restLabel(restOf(it))}</button></div>${it.extra ? `<button class="linkbtn danger" data-act="tirarExtra" data-ex="${esc(it.exId)}">Tirar este exercício extra</button>` : ""}</div>`;
   });
+  h += `<button class="btn ghost block" data-act="openPicker" data-sessao="${esc(s.id)}" style="margin-top:12px">+ Exercício extra (só neste treino)</button><p class="small muted" style="margin:6px 0 0">Não muda o seu plano: fica registrado só neste treino.</p>`;
   h += `<div class="row" style="margin-top:18px"><button class="btn strength" data-act="finishTreino">Fazer check-out e finalizar</button></div><div class="row" style="margin-top:10px"><button class="btn danger" data-act="cancel" data-id="${esc(s.id)}">Descartar este treino</button></div>`;
   return h;
 }
+
+// exercício extra: sai deste treino junto com as séries dele (o plano não muda)
+actions.tirarExtra = el => {
+  const s = active("treino"); if (!s) return;
+  const id = el.dataset.ex, temSerie = ((s.sets || {})[id] || []).some(x => x.ok || x.kg || x.reps);
+  if (temSerie && !confirm("Este exercício já tem séries preenchidas. Tirar mesmo assim?")) return;
+  s.plano.ex = s.plano.ex.filter(x => !(x.exId === id && x.extra)); if (s.sets) delete s.sets[id];
+  flush("sessions", s.id); rerenderKeepScroll();
+};
 
 /* ---------- check-in ---------- */
 actions.startTreino = el => {

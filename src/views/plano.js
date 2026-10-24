@@ -213,8 +213,15 @@ export function setVideo(exId, video){
 }
 
 /* ---------- escolher exercícios do banco ---------- */
-actions.openPicker = () => {
-  openModal(`<div class="between"><h3>Adicionar ao treino ${ui.editL}</h3><button class="linkbtn" data-act="closeModal">Fechar</button></div>
+// alvoSessao: id do treino em andamento quando o exercício é extra (entra só nesse treino, não no plano)
+let alvoSessao = null;
+const alvoEx = () => alvoSessao && S.sessions[alvoSessao] ? S.sessions[alvoSessao].plano.ex : curT().ex;
+const novoItem = ex => Object.assign({ exId: ex.id }, defaultRx(ex), alvoSessao ? { extra: true } : {});
+const gravarAlvo = () => { if (alvoSessao && S.sessions[alvoSessao]) flush("sessions", alvoSessao); else save("plans", curPlan().id); };
+actions.openPicker = el => { alvoSessao = (el && el.dataset && el.dataset.sessao) || null; abrirPicker(); };
+actions.openPickerVoltar = () => abrirPicker(); // volta da criação de exercício sem trocar o destino
+function abrirPicker(){
+  openModal(`<div class="between"><h3>${alvoSessao ? "Exercício extra (só neste treino)" : "Adicionar ao treino " + ui.editL}</h3><button class="linkbtn" data-act="closeModal">Fechar</button></div>
     <div class="field" style="margin-top:10px"><input id="pk-q" class="txt" type="search" placeholder="Buscar exercício" data-act="pickQ" autocomplete="off"></div>
     <div class="chips" style="margin-top:10px"><button type="button" class="chip" data-act="pickG" data-v="" aria-pressed="true">Todos</button>${Object.keys(GRUPOS).map(g => `<button type="button" class="chip" data-act="pickG" data-v="${g}" aria-pressed="false">${GRUPOS[g]}</button>`).join("")}</div>
     ${hasLombar() ? `<label class="small" style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="pk-safe" data-act="pickSafe" checked style="width:20px;height:20px;accent-color:var(--strength)"> Esconder exercícios para evitar com hérnia</label>` : ""}
@@ -224,7 +231,7 @@ actions.openPicker = () => {
   renderPickList();
 };
 function renderPickList(){
-  const st = modalState, q = norm(st.q), inPlan = new Set(curT().ex.map(x => x.exId));
+  const st = modalState, q = norm(st.q), inPlan = new Set(alvoEx().map(x => x.exId));
   const arr = allExercises().filter(e => (!st.g || e.grupo === st.g) && (!st.safe || e.lombar !== "evitar") && (!q || norm(e.nome).includes(q)));
   const el = $("#pickList"); if (!el) return;
   if (!arr.length){ el.innerHTML = `<li class="muted">Nenhum exercício encontrado.</li>`; return; }
@@ -235,10 +242,10 @@ inputs.pickQ = el => { modalState.q = el.value; renderPickList(); };
 actions.pickG = el => { modalState.g = el.dataset.v; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false")); renderPickList(); };
 changes.pickSafe = el => { modalState.safe = el.checked; renderPickList(); };
 actions.pickAdd = el => {
-  const ex = getEx(el.dataset.id), t = curT();
+  const ex = getEx(el.dataset.id);
   if (ex.lombar === "evitar" && hasLombar() && !confirm(`${ex.nome} é um exercício para evitar com hérnia lombar. Adicionar mesmo assim?`)) return;
-  t.ex.push(Object.assign({ exId: ex.id }, defaultRx(ex)));
-  save("plans", curPlan().id);
+  alvoEx().push(novoItem(ex));
+  gravarAlvo();
   renderPickList();
   rerenderBehindModal();
 };
@@ -261,7 +268,7 @@ actions.newCustomEx = () => {
     <div class="field"><label class="lab" for="cx-video">Link do vídeo no YouTube (opcional)</label><input id="cx-video" class="txt" type="url" inputmode="url"></div>
     <div class="field"><label class="lab" for="cx-nota">Observação de técnica (opcional)</label><textarea id="cx-nota" class="txt" maxlength="300"></textarea></div>
     <div class="err" id="cx-err"></div>
-    <div class="row" style="margin-top:20px"><button class="btn ghost" data-act="openPicker">Voltar</button><button class="btn strength" data-act="saveCustomEx">Criar e adicionar</button></div>`);
+    <div class="row" style="margin-top:20px"><button class="btn ghost" data-act="openPickerVoltar">Voltar</button><button class="btn strength" data-act="saveCustomEx">Criar e adicionar</button></div>`);
 };
 export function createCustomEx(data){
   const id = "u_" + (norm(data.nome).replace(/ /g, "_").slice(0, 30) || "ex") + "_" + Math.random().toString(36).slice(2, 6);
@@ -274,6 +281,6 @@ actions.saveCustomEx = () => {
   if (!nome){ $("#cx-err").textContent = "Informe o nome."; return; }
   if (video && !isYoutubeUrl(video)){ $("#cx-err").textContent = "O link precisa ser do YouTube."; return; }
   const ex = createCustomEx({ nome, grupo: $("#cx-grupo").value, equip: $("#cx-equip").value, tipo: $("#cx-tipo").value, lombar: $("#cx-lombar").value, nota: $("#cx-nota").value.trim(), video: video || undefined, load: $("#cx-noload").checked ? false : undefined });
-  curT().ex.push(Object.assign({ exId: ex.id }, defaultRx(ex)));
-  save("plans", curPlan().id); closeModal(); rerenderKeepScroll();
+  alvoEx().push(novoItem(ex));
+  gravarAlvo(); closeModal(); rerenderKeepScroll();
 };
