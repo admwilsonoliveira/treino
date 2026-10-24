@@ -14,6 +14,7 @@ import { dadosPlano } from "./planoexport.js";
 import { refeicoesDo, totaisDe, aguaTotal, metas, nomeTipo, tdeeAdaptativo } from "./nutricao.js";
 import { analise } from "./vitaminas.js";
 import { mondayOf } from "./util.js";
+import { habitosList, stopBangList, tabagismo } from "./habitos.js";
 
 const f = (v, d = 1) => (v == null || !isFinite(v) ? "–" : fmtNum(v, d));
 const sn = (v, d = 1) => (v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + fmtNum(Math.abs(v), d));
@@ -204,6 +205,19 @@ export function dadosCompletos(){
   const ts = Object.values(S.testes || {}).filter(noPer).sort((a, b) => a.date.localeCompare(b.date));
   if (ts.length) sec("Testes funcionais").tabelas.push({ head: ["Data", "Teste", "Resultado", "Referência"],
     body: ts.map(t => t.tipo === "sentar_levantar" ? [dt(t.date), "Sentar e levantar 5 vezes", f(t.segundos) + " s", "> 15 s = força baixa (EWGSOP2)"] : [dt(t.date), "Força de preensão", f(t.melhor) + " kg", p.sexo === "F" ? "< 16 kg = fraqueza" : "< 27 kg = fraqueza"]) });
+
+  // hábitos: médias por mês do check-in da noite, STOP-Bang e cigarro
+  if (saude){
+    const hs = habitosList().filter(noPer), sbs = stopBangList().filter(noPer), tb = tabagismo();
+    if (hs.length || sbs.length || tb.status){
+      const s = sec("Hábitos, sono e apneia"), mm = (a, k) => { const v = a.map(h => num(h[k])).filter(x => x != null); return v.length ? v.reduce((x, y) => x + y, 0) / v.length : null; };
+      const meses = [...new Set(hs.map(h => h.date.slice(0, 7)))];
+      if (meses.length) s.tabelas.push({ head: ["Mês", "Check-ins", "Sono (h)", "Qualidade (1–5)", "Estresse (1–5)", "Fome (1–5)", "Humor (1–5)", "Passos/dia", "Álcool (doses no mês)", "FC repouso"],
+        body: meses.map(m => { const a = hs.filter(h => h.date.slice(0, 7) === m); return [m.slice(5) + "/" + m.slice(0, 4), a.length, f(mm(a, "sonoH")), f(mm(a, "sonoQ")), f(mm(a, "estresse")), f(mm(a, "fome")), f(mm(a, "humor")), f(mm(a, "passos"), 0), f(a.reduce((x, h) => x + (num(h.alcool) || 0), 0)), f(mm(a, "fc"), 0)]; }) });
+      if (sbs.length) s.tabelas.push({ head: ["Data", "STOP-Bang", "Ronco alto", "Cansaço", "Pausas observadas", "Pressão alta"], body: sbs.map(x => [dt(x.date), x.pontos + "/8", x.resp.S ? "sim" : "não", x.resp.T ? "sim" : "não", x.resp.O ? "sim" : "não", x.resp.P ? "sim" : "não"]) });
+      if (tb.status) s.paragrafos.push("Cigarro: " + (tb.status === "parou" ? "parou em " + dt(tb.parouEm) : tb.status === "fuma" ? "fuma" : "nunca fumou") + ".");
+    }
+  }
 
   return { titulo: "Relatório completo de saúde e treino", sub: `${p.nome || ""} · ${dt(de)} a ${dt(ate)} · gerado em ${dt(ate)}`, de, ate, secoes };
 }

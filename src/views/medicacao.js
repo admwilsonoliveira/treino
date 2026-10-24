@@ -14,6 +14,8 @@ import { vitaminasHtml } from "./vitaminas.js";
 import { examesHtml, examesAfter } from "./exames.js";
 import { habitosHtml } from "./habitos.js";
 import { conquistasHtml } from "./conquistas.js";
+import { relSaudeHtml } from "./relsaude.js";
+import { cardapioHtml, cardapioAfter } from "./cardapio.js";
 import { checkinDe } from "../habitos.js";
 import { ultimoValor } from "../fita.js";
 import { mediaAtual, ritmo } from "../peso.js";
@@ -74,6 +76,8 @@ views.saude = {
     if (ui.sub === "vitaminas") return vitaminasHtml();
     if (ui.sub === "exames") return examesHtml();
     if (ui.sub === "habitos") return habitosHtml();
+    if (ui.sub === "relatorios") return relSaudeHtml();
+    if (ui.sub === "cardapio") return cardapioHtml();
     const tx = textoAgenda(agenda()), m = mediaAtual(), r = ritmo(4);
     return `<h2 style="margin-top:0">Saúde</h2>${alertasHtml()}
       <button class="panel hub" data-act="goMedicacao"><div><strong>Medicação</strong><div class="small muted">${esc(tx.t)}${tx.s ? " · " + esc(tx.s) : ""}</div></div><span aria-hidden="true">›</span></button>
@@ -84,13 +88,14 @@ views.saude = {
       <button class="panel hub" data-act="goVitaminas" style="margin-top:12px"><div><strong>Vitaminas da semana</strong><div class="small muted">B12, folato, vitamina D, fibra, cálcio, ferro, proteína e gordura boa</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goFotos" style="margin-top:12px"><div><strong>Fotos de progresso</strong><div class="small muted">${(n => n ? `Última sessão em ${ddmm(n.date)} · só neste celular` : "Frente, lado e costas, uma vez por mês")(sessoesFotos().pop())}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goMetodos" style="margin-top:12px"><div><strong>Comparar métodos</strong><div class="small muted">Gordura e massa magra: relógio, fita e dobras</div></div><span aria-hidden="true">›</span></button>
+      <button class="panel hub" data-act="goRelSaude" style="margin-top:12px"><div><strong>Relatórios e coach</strong><div class="small muted">Semana, PDF para o médico, planilhas, pacote para o coach e cardápio</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goRelCompleto" style="margin-top:12px"><div><strong>Relatório completo</strong><div class="small muted">12 meses, para a IA ou o médico</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goDobras" style="margin-top:12px"><div><strong>Dobras cutâneas</strong><div class="small muted">${esc(dobrasResumo() || "Nenhuma medida ainda")}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goTestes" style="margin-top:12px"><div><strong>Testes mensais</strong><div class="small muted">Sentar e levantar e força de preensão</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goMedidas" style="margin-top:12px"><div><strong>Medidas com fita</strong><div class="small muted">${(c => c ? `Cintura ${fmtNum(c.v)} cm em ${ddmm(c.date)}` : "Nenhuma medida em jejum ainda")(ultimoValor("cintura_umbigo"))}</div></div><span aria-hidden="true">›</span></button>
       ${conquistasHtml()}`;
   },
-  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); if (ui.sub === "medidas") drawFita(); if (ui.sub === "dobras") drawDobras(); if (ui.sub === "metodos") drawMetodos(); if (ui.sub === "exames") examesAfter(); }
+  after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); if (ui.sub === "medidas") drawFita(); if (ui.sub === "dobras") drawDobras(); if (ui.sub === "metodos") drawMetodos(); if (ui.sub === "exames") examesAfter(); if (ui.sub === "cardapio") cardapioAfter(); }
 };
 
 function medicacaoHtml(){

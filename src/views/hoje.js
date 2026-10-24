@@ -10,6 +10,7 @@ import { nutricaoCardHtml } from "./diario.js";
 import { vitaminasCardHtml } from "./vitaminas.js";
 import { checkinCardHtml } from "./habitos.js";
 import { filaAlertas } from "../alertas.js";
+import { fecharSemana } from "../semanal.js";
 import { perdaEstudoCardHtml } from "./peso.js";
 import { conquistaCardHtml } from "./conquistas.js";
 import { semanaInfo } from "../programa.js";
@@ -26,6 +27,7 @@ views.hoje = {
     const d = new Date(), wd = d.getDay(), p = activePlan(), t = treinoForDay(p, wd), w = S.settings.walk;
     const isWalkDay = w.dias.includes(wd);
     const at = active("treino"), aw = active("caminhada");
+    fecharSemana(); // guarda os alertas da semana que terminou (uma vez por semana)
     // alertas de segurança da medicação ficam sempre no topo
     let h = alertasHtml() + resultadoHtml() + remoteBannerHtml();
     if (ui.apkUpdate) h += `<div class="panel" style="margin-bottom:12px;border-color:var(--strength)"><strong>Nova versão do app: ${esc(ui.apkUpdate.versao)}</strong><p class="small muted" style="margin:4px 0 10px">Toque para baixar e depois em "Atualizar". Seus dados continuam no celular.</p><a class="btn strength block" href="${esc(ui.apkUpdate.url)}" target="_blank" rel="noopener">Baixar atualização</a></div>`;
