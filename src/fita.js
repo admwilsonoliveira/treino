@@ -5,8 +5,8 @@ import { num, ymd } from "./util.js";
 
 export const GRUPOS = [
   ["Tronco", [["cintura_umbigo", "Cintura (altura do umbigo)"], ["cintura_menor", "Cintura (parte mais fina)"], ["pescoco", "Pescoço"], ["quadril", "Quadril"], ["peito", "Peito (altura dos mamilos)"]]],
-  ["Braços", [["braco_relaxado_esq", "Braço relaxado esq."], ["braco_relaxado_dir", "Braço relaxado dir."], ["braco_contraido_esq", "Braço contraído esq."], ["braco_contraido_dir", "Braço contraído dir."], ["antebraco_esq", "Antebraço esq."], ["antebraco_dir", "Antebraço dir."]]],
-  ["Pernas", [["coxa_esq", "Coxa esq."], ["coxa_dir", "Coxa dir."], ["coxa_medial_esq", "Coxa medial esq."], ["coxa_medial_dir", "Coxa medial dir."], ["panturrilha_esq", "Panturrilha esq."], ["panturrilha_dir", "Panturrilha dir."]]]
+  ["Braços", [["braco_relaxado_dir", "Braço relaxado dir."], ["braco_relaxado_esq", "Braço relaxado esq."], ["braco_contraido_dir", "Braço contraído dir."], ["braco_contraido_esq", "Braço contraído esq."], ["antebraco_dir", "Antebraço dir."], ["antebraco_esq", "Antebraço esq."]]],
+  ["Pernas", [["coxa_dir", "Coxa dir."], ["coxa_esq", "Coxa esq."], ["coxa_medial_dir", "Coxa medial dir."], ["coxa_medial_esq", "Coxa medial esq."], ["panturrilha_dir", "Panturrilha dir."], ["panturrilha_esq", "Panturrilha esq."]]]
 ];
 export const PONTOS = GRUPOS.flatMap(g => g[1]);
 export const nomePonto = k => (PONTOS.find(p => p[0] === k) || [, k])[1];

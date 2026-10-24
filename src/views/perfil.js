@@ -106,11 +106,12 @@ function modalMedida(id){
   openModal(`<h3>${id ? "Editar medida" : "Nova medida"}</h3>
     <p class="small muted" style="margin-top:6px">Só o peso é obrigatório. Os outros campos vêm da balança de bioimpedância, se você tiver.</p>
     <div class="grid2">
-      <div class="field"><label class="lab" for="md-date">Data</label><input id="md-date" class="txt" type="date" value="${esc(m.date)}"></div>
-      <div class="field"><label class="lab" for="md-peso">Peso (kg)</label><input id="md-peso" class="txt" type="text" inputmode="decimal" placeholder="Ex.: 89,5" value="${m.peso != null ? esc(fmtNum(m.peso)) : ""}"></div>
+      <div class="field"><label class="lab" for="md-date">Data da pesagem</label><input id="md-date" class="txt" type="date" value="${esc(m.date)}"></div>
+      <div class="field"><label class="lab" for="md-hora">Hora da pesagem</label><input id="md-hora" class="txt" type="time" value="${esc(m.hora || "")}"></div>
     </div>
+    <div class="help">Pesou mais cedo? Toque na hora e ajuste.</div>
     <div class="grid2">
-      <div class="field"><label class="lab" for="md-hora">Hora</label><input id="md-hora" class="txt" type="time" value="${esc(m.hora || "")}"></div>
+      <div class="field"><label class="lab" for="md-peso">Peso (kg)</label><input id="md-peso" class="txt" type="text" inputmode="decimal" placeholder="Ex.: 89,5" value="${m.peso != null ? esc(fmtNum(m.peso)) : ""}"></div>
       <div class="field"><span class="lab">Condição</span>
         <label class="small" style="display:flex;gap:8px;align-items:center;min-height:30px"><input type="checkbox" id="md-jejum" ${m.jejum ? "checked" : ""} style="width:20px;height:20px;accent-color:var(--strength)"> Em jejum</label>
         <label class="small" style="display:flex;gap:8px;align-items:center;min-height:30px"><input type="checkbox" id="md-banheiro" ${m.posBanheiro ? "checked" : ""} style="width:20px;height:20px;accent-color:var(--strength)"> Depois do banheiro</label></div>

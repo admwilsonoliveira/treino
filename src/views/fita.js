@@ -1,4 +1,4 @@
-// Saúde → Medidas com fita: registro com 2 leituras por ponto, índices, progresso da cintura e comparação.
+// Saúde → Medidas com fita: registro com 1 leitura por ponto (a 2ª é opcional), índices, progresso da cintura e comparação.
 import { Chart, LineController, LineElement, PointElement, LinearScale, Tooltip, Legend } from "chart.js";
 import { S, flush, setStatus } from "../store.js";
 import { ui, actions, inputs, changes, render, openModal, closeModal, modalState } from "../ui.js";
@@ -26,7 +26,7 @@ ui.fitaSemJejum = ui.fitaSemJejum || false;
 export function fitaHtml(){
   let h = `<div class="between"><h2 style="margin-top:0">Medidas com fita</h2><button class="linkbtn" data-act="goSaude">‹ Saúde</button></div>`;
   const todas = fitaList();
-  h += `<div class="panel"><p class="small muted" style="margin:0 0 10px">Meça de manhã, em jejum, com a mesma fita. Duas leituras por ponto; o app usa a média.</p>
+  h += `<div class="panel"><p class="small muted" style="margin:0 0 10px">Meça de manhã, em jejum, com a mesma fita. Lado direito primeiro, depois o esquerdo.</p>
     <button class="btn strength block" data-act="fitaNova">Registrar medidas</button></div>`;
   if (!todas.length) return h + `<p class="empty">Nenhuma medida ainda. Comece pela cintura na altura do umbigo e pelo pescoço.</p>`;
 
@@ -99,7 +99,7 @@ function pontoHtml(k, n, arr){
   const terceira = arr && arr.length >= 3;
   return `<div class="ponto" data-p="${k}"><div class="lab small">${esc(n)}</div>
     <div class="leit"><input class="txt" id="fp-${k}-0" type="text" inputmode="decimal" placeholder="1ª" value="${v(0)}" data-act="fitaLeitura" data-p="${k}">
-    <input class="txt" id="fp-${k}-1" type="text" inputmode="decimal" placeholder="2ª" value="${v(1)}" data-act="fitaLeitura" data-p="${k}">
+    <input class="txt" id="fp-${k}-1" type="text" inputmode="decimal" placeholder="2ª (opcional)" value="${v(1)}" data-act="fitaLeitura" data-p="${k}">
     <input class="txt" id="fp-${k}-2" type="text" inputmode="decimal" placeholder="3ª" value="${v(2)}" data-act="fitaLeitura" data-p="${k}" ${terceira ? "" : "hidden"}></div>
     <div class="help" id="fh-${k}"></div></div>`;
 }
@@ -108,7 +108,7 @@ function modalFita(id){
   openModal(`<h3>${id ? "Editar medidas" : "Registrar medidas"}</h3>
     <div class="grid2"><div class="field"><label class="lab" for="ft-date">Data</label><input id="ft-date" class="txt" type="date" value="${esc(f.date)}"></div>
       <div class="field"><span class="lab">Condição</span><label class="small" style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="ft-jejum" ${f.jejum ? "checked" : ""} style="width:22px;height:22px;accent-color:var(--strength)"> Em jejum</label></div></div>
-    <p class="small muted" style="margin:8px 0 0">Preencha só os pontos que quiser. Faça 2 leituras de cada; se diferirem mais de ${DIF_MAX} cm, o app pede uma 3ª.</p>
+    <p class="small muted" style="margin:8px 0 0">Preencha só os pontos que quiser. Uma leitura basta; a 2ª é opcional (se diferir mais de ${DIF_MAX} cm da 1ª, o app pede uma 3ª).</p>
     ${GRUPOS.map(([g, ps], i) => `<details class="grupo" ${i === 0 || ps.some(([k]) => f.leituras[k]) ? "open" : ""}><summary>${g}</summary>${ps.map(([k, n]) => pontoHtml(k, n, f.leituras[k])).join("")}</details>`).join("")}
     <div class="field"><label class="lab" for="ft-obs">Observação</label><input id="ft-obs" class="txt" type="text" value="${esc(f.obs || "")}"></div>
     <div class="err" id="ft-err"></div>

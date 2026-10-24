@@ -25,6 +25,8 @@ export const PROTOCOLOS = {
   sozinho: { nome: "Sozinho (3 dobras)", pontos: ["peitoral", "abdominal", "coxa"], extras: ["panturrilha_medial", "suprailiaca"] },
   com_ajuda: { nome: "Com ajuda (7 dobras + Petroski)", pontos: ["peitoral", "axilar_media", "triceps", "subescapular", "abdominal", "suprailiaca", "coxa", "panturrilha_medial"], extras: ["biceps"] }
 };
+// Leituras por ponto: 1 (pedido do Wilson em 24/10/2026: 3 voltas cansavam). Com mais de 1, o app faz rodízio.
+export const VOLTAS = 1;
 export const DIF_MAX_MM = 2;   // leituras do mesmo ponto diferindo mais que isso: pede a 4ª
 export const PERTO_LIMITE = 45, DOBRA_GRANDE = 40;
 export const FORA = "fora";    // leitura que não fechou (passou da abertura do aparelho)

@@ -5,7 +5,7 @@ import { S, flush, setStatus } from "../store.js";
 import { ui, actions, inputs, changes, render, openModal, updateModal, closeModal, modalState } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, $ } from "../util.js";
 import {
-  nomeDobra, ponto, PROTOCOLOS, DIF_MAX_MM, PERTO_LIMITE, DOBRA_GRANDE, FORA, adipometro, oficial, precisaQuarta,
+  nomeDobra, ponto, PROTOCOLOS, VOLTAS, DIF_MAX_MM, PERTO_LIMITE, DOBRA_GRANDE, FORA, adipometro, oficial, precisaQuarta,
   valorDobra, dentro, dobrasList, soma, somaComum, percentuais, pesagemPerto, conquista
 } from "../dobras.js";
 import { ultimoValor, indices } from "../fita.js";
@@ -137,7 +137,7 @@ actions.dbComecar = () => {
 function telaPonto(){
   const st = modalState, k = st.quarta ? st.quarta[st.idx] : st.pontos[st.idx], p = ponto(k), ad = adipometro();
   const total = st.quarta ? st.quarta.length : st.pontos.length;
-  updateModal(`<div class="small muted">${st.quarta ? "Leitura extra (as leituras diferiram mais de " + DIF_MAX_MM + " mm)" : "Volta " + st.volta + " de 3"} · ponto ${st.idx + 1} de ${total}</div>
+  updateModal(`<div class="small muted">${st.quarta ? "Leitura extra (as leituras diferiram mais de " + DIF_MAX_MM + " mm)" : (VOLTAS > 1 ? "Volta " + st.volta + " de " + VOLTAS : "Uma leitura por ponto")} · ponto ${st.idx + 1} de ${total}</div>
     <h3 style="margin-top:4px">${esc(p[1])}</h3>
     <div class="guia"><div>${guiaSvg(k)}</div><div class="small"><p><strong>Dobra ${esc(p[2])}.</strong> ${esc(p[3])}</p>${st.leituras[k].length ? `<p class="muted">Leituras anteriores: ${st.leituras[k].map(mmTxt).join(" · ")} mm</p>` : ""}</div></div>
     <div class="field"><label class="lab" for="db-mm">Leitura (mm)</label><input id="db-mm" class="txt leitura-mm" type="text" inputmode="decimal" placeholder="Ex.: 32,5" data-act="dbMm" autofocus>
@@ -157,9 +157,9 @@ function grava(valor){
   st.leituras[k].push(valor); st.idx++;
   const total = st.quarta ? st.quarta.length : st.pontos.length;
   if (st.idx < total) return telaPonto();
-  if (!st.quarta && st.volta < 3){ st.volta++; st.idx = 0; return telaPonto(); }
-  // depois das 3 voltas: 4ª leitura só nos pontos em que as leituras diferiram mais de 2 mm
-  if (!st.quarta){ const q = st.pontos.filter(x => precisaQuarta(st.leituras[x])); if (q.length){ st.quarta = q; st.idx = 0; return telaPonto(); } }
+  if (!st.quarta && st.volta < VOLTAS){ st.volta++; st.idx = 0; return telaPonto(); }
+  // com rodízio (mais de 1 volta): leitura extra só nos pontos em que as leituras diferiram mais de 2 mm
+  if (!st.quarta && VOLTAS > 1){ const q = st.pontos.filter(x => precisaQuarta(st.leituras[x])); if (q.length){ st.quarta = q; st.idx = 0; return telaPonto(); } }
   telaResumo();
 }
 actions.dbProximo = () => {
@@ -175,7 +175,7 @@ function telaResumo(){
     <div class="stat-num" style="font-size:40px;margin-top:6px;color:var(--gordura)">${s.incompleta ? "≥ " : ""}${fmtNum(s.mm)} mm</div>
     <div class="small muted">Soma das dobras${s.incompleta ? " (incompleta: " + esc(s.fora.map(nomeDobra).join(", ")) + " passou do limite)" : ""}</div>
     <ul class="hist" style="margin-top:8px">${st.pontos.map(k => `<li><span>${esc(nomeDobra(k))}<span class="small muted"> · ${st.leituras[k].map(mmTxt).join(" / ")}</span></span><strong>${mmTxt(oficial(st.leituras[k]))} mm</strong></li>`).join("")}</ul>
-    <p class="small muted">O valor de cada ponto é a mediana das leituras.</p>
+    ${VOLTAS > 1 ? `<p class="small muted">O valor de cada ponto é a mediana das leituras.</p>` : ""}
     <div class="field"><label class="lab" for="db-obs">Observação</label><input id="db-obs" class="txt" type="text" maxlength="120"></div>
     <div class="row" style="margin-top:16px"><button class="btn ghost" data-act="dbCancelar">Descartar</button><button class="btn strength" data-act="dbSalvar">Salvar</button></div>`);
 }
