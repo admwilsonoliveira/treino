@@ -9,18 +9,16 @@ import { avaliacaoCardHtml } from "./testes.js";
 import { nutricaoCardHtml } from "./diario.js";
 import { vitaminasCardHtml } from "./vitaminas.js";
 import { checkinCardHtml } from "./habitos.js";
-import { alertasAlimentacao } from "../nutricao.js";
-import { alertaForca, alertaDuracao } from "../forca.js";
-import { alertasPeso } from "../peso.js";
-import { alertasSeguranca } from "../medicacao.js";
+import { filaAlertas } from "../alertas.js";
+import { perdaEstudoCardHtml } from "./peso.js";
+import { conquistaCardHtml } from "./conquistas.js";
 import { semanaInfo } from "../programa.js";
 import { semanaHtml } from "./treinos.js";
 import { esc, num, fmtNum, ymd, mondayOf, DIAS, DIAS_CURTO } from "../util.js";
 
-// Alertas de resultado (peso parado, pausa na pesagem): no máximo 3 no total, os de segurança primeiro
+// Fila única de alertas (alertas.js): no máximo 3 no total, os de segurança primeiro
 function resultadoHtml(){
-  const livres = Math.max(0, 3 - alertasSeguranca().length);
-  return alertasPeso().concat(alertasAlimentacao(), [alertaForca(), alertaDuracao()].filter(Boolean)).slice(0, livres).map(a => `<div class="panel aviso" style="margin-bottom:12px"><strong>${esc(a.titulo)}</strong><p class="small" style="margin:4px 0 0">${esc(a.msg)}</p>${a.ok ? `<button class="linkbtn" data-act="${esc(a.ok)}">Entendi</button>` : ""}</div>`).join("");
+  return filaAlertas().map(a => `<div class="panel ${a.humor ? "" : "aviso"}" style="margin-bottom:12px${a.humor ? ";border-color:var(--cor-dose)" : ""}"><strong>${esc(a.titulo)}</strong><p class="small" style="margin:4px 0 0">${esc(a.msg)}</p>${a.act ? `<button class="linkbtn" data-act="${esc(a.act)}">Ver</button>` : ""}${a.ok ? `<button class="linkbtn" data-act="${esc(a.ok)}">Entendi</button>` : ""}</div>`).join("");
 }
 
 views.hoje = {
@@ -37,7 +35,11 @@ views.hoje = {
     const todayDone = done().filter(s => s.date === ymd(d));
     const tDone = todayDone.find(s => s.type === "treino"), wDone = todayDone.find(s => s.type === "caminhada");
 
-    h += `<div class="panel" ${at || aw ? 'style="margin-top:12px"' : ""}><div class="today-head">`;
+    const saude = !!(S.saude && S.saude.ativo);
+    h += conquistaCardHtml();
+    // com o módulo Saúde: dose, peso e alimentação antes do treino de hoje
+    if (saude) h += medicacaoCardHtml() + pesoCardHtml() + nutricaoCardHtml();
+    h += `<div class="panel" style="margin-top:12px"><div class="today-head">`;
     if (!p){
       h += `<div class="big-letter rest">?</div><div><h3>Nenhum plano de treino</h3><div class="muted small">Escolha um modelo ou monte o seu na aba Treinos.</div></div>`;
     } else if (t){
@@ -54,7 +56,7 @@ views.hoje = {
     else if (t && !at && !tDone) h += `<button class="btn strength" data-act="openTreino" data-t="${t}">Abrir treino ${t}</button>`;
     if (!aw) h += `<button class="btn ${t && !tDone ? "ghost" : "walk"}" data-act="startWalk">Iniciar caminhada</button>`;
     h += `</div></div>`;
-    h += medicacaoCardHtml() + (S.saude && S.saude.ativo ? pesoCardHtml() : "") + nutricaoCardHtml() + checkinCardHtml() + vitaminasCardHtml() + forcaCardHtml() + avaliacaoCardHtml();
+    h += forcaCardHtml() + perdaEstudoCardHtml() + checkinCardHtml() + vitaminasCardHtml() + avaliacaoCardHtml();
 
     // semana
     const mon = mondayOf(d), nTreinos = p ? new Set(planLetters(p).flatMap(L => p.treinos[L].dias || [])).size : 0;

@@ -13,6 +13,7 @@ import { alimentacaoHtml } from "./alimentacao.js";
 import { vitaminasHtml } from "./vitaminas.js";
 import { examesHtml, examesAfter } from "./exames.js";
 import { habitosHtml } from "./habitos.js";
+import { conquistasHtml } from "./conquistas.js";
 import { checkinDe } from "../habitos.js";
 import { ultimoValor } from "../fita.js";
 import { mediaAtual, ritmo } from "../peso.js";
@@ -86,7 +87,8 @@ views.saude = {
       <button class="panel hub" data-act="goRelCompleto" style="margin-top:12px"><div><strong>Relatório completo</strong><div class="small muted">12 meses, para a IA ou o médico</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goDobras" style="margin-top:12px"><div><strong>Dobras cutâneas</strong><div class="small muted">${esc(dobrasResumo() || "Nenhuma medida ainda")}</div></div><span aria-hidden="true">›</span></button>
       <button class="panel hub" data-act="goTestes" style="margin-top:12px"><div><strong>Testes mensais</strong><div class="small muted">Sentar e levantar e força de preensão</div></div><span aria-hidden="true">›</span></button>
-      <button class="panel hub" data-act="goMedidas" style="margin-top:12px"><div><strong>Medidas com fita</strong><div class="small muted">${(c => c ? `Cintura ${fmtNum(c.v)} cm em ${ddmm(c.date)}` : "Nenhuma medida em jejum ainda")(ultimoValor("cintura_umbigo"))}</div></div><span aria-hidden="true">›</span></button>`;
+      <button class="panel hub" data-act="goMedidas" style="margin-top:12px"><div><strong>Medidas com fita</strong><div class="small muted">${(c => c ? `Cintura ${fmtNum(c.v)} cm em ${ddmm(c.date)}` : "Nenhuma medida em jejum ainda")(ultimoValor("cintura_umbigo"))}</div></div><span aria-hidden="true">›</span></button>
+      ${conquistasHtml()}`;
   },
   after(){ if (ui.sub === "medicacao") drawCurva(); if (ui.sub === "peso") drawPeso(); if (ui.sub === "medidas") drawFita(); if (ui.sub === "dobras") drawDobras(); if (ui.sub === "metodos") drawMetodos(); if (ui.sub === "exames") examesAfter(); }
 };

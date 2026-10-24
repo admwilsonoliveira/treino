@@ -299,3 +299,8 @@ nav.tabs button.fab{align-self:center;justify-self:center;width:56px;min-height:
 button.panel.hub{display:flex;width:100%;justify-content:space-between;align-items:center;text-align:left;color:var(--ink);font-size:16px}
 button.panel.hub > span{font-size:26px;color:var(--ink-2)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+/* conquistas (micrometas) */
+.selo{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--walk-soft);color:var(--walk);font-size:16px;vertical-align:middle}
+.selos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.selo-item{display:flex;gap:8px;align-items:flex-start;opacity:.55}
+.selo-item.ok{opacity:1}

@@ -160,3 +160,24 @@ actions.eventoApagar = el => {
   if (!confirm("Apagar este evento?")) return;
   delete S.eventos[el.dataset.id]; flush("eventos", el.dataset.id); closeModal(); render();
 };
+
+/* ---------- cartão do Hoje: % de perda vs. SURMOUNT-1 (mini gráfico) ---------- */
+const doseEstudo = () => { const d = num(S.saude && S.saude.doseAtualMg) || 0; return d >= 15 ? "15 mg" : d >= 10 ? "10 mg" : "5 mg"; };
+const interp = (pts, x) => { for (let i = 1; i < pts.length; i++) if (x <= pts[i][0]){ const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); } return pts[pts.length - 1][1]; };
+export function perdaEstudoCardHtml(){
+  if (!(S.saude && S.saude.ativo) || S.saude.medicamento !== "tirzepatida") return "";
+  const c = suaCurva(); if (c.length < 2) return "";
+  const u = c[c.length - 1], dose = doseEstudo(), est = SURMOUNT[dose], semMax = Math.max(24, Math.ceil(u.x / 12) * 12);
+  const yMin = Math.min(-25, Math.floor(Math.min(...c.map(p => p.y)) / 5) * 5), W = 300, H = 90;
+  const px = x => (x / semMax * W).toFixed(1), py = y => (y / yMin * (H - 6) + 3).toFixed(1);
+  const linha = pts => pts.map((p, i) => (i ? "L" : "M") + px(p[0]) + " " + py(p[1])).join(" ");
+  const estPts = est.filter(p => p[0] <= semMax), voce = c.map(p => [p.x, p.y]);
+  return `<div class="panel" style="margin-top:12px"><div class="between"><div class="small muted">Você × estudo (SURMOUNT-1, ${dose})</div><button class="linkbtn" data-act="goPeso">Ver</button></div>
+    <div class="small" style="margin-top:4px"><strong style="color:var(--cor-primaria)">${fmtNum(u.y)}%</strong> em ${fmtNum(u.x, 0)} semanas · estudo: ${fmtNum(interp(est, u.x))}%</div>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Sua perda de peso em % comparada à curva média do estudo" style="margin-top:6px;display:block">
+      <line x1="0" y1="${py(0)}" x2="${W}" y2="${py(0)}" stroke="var(--line)"/>
+      <path d="${linha(estPts)}" fill="none" stroke="var(--ink-2)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <path d="${linha(voce)}" fill="none" stroke="var(--cor-primaria)" stroke-width="2.5"/>
+      <circle cx="${px(u.x)}" cy="${py(u.y)}" r="3.5" fill="var(--cor-primaria)"/></svg>
+    <div class="small muted">Linha tracejada: média aproximada do estudo. Cada corpo responde de um jeito.</div></div>`;
+}
