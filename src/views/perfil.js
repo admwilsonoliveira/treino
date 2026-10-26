@@ -240,7 +240,8 @@ views.perfil = {
     h += `<h2>Plano de treino</h2><div class="panel"><div class="between"><div><strong>${pl ? esc(pl.nome) : "Nenhum plano"}</strong><div class="small muted">${pl ? "Divisão " + pl.split : ""}</div></div><button class="linkbtn" data-act="goPlano">Editar</button></div>
       <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="goPlanos">Trocar plano ou criar novo</button></div>
       <div class="field"><label class="lab" for="restPadrao">Descanso padrão entre séries</label><select id="restPadrao" class="txt" data-act="restPadrao">${[30, 45, 60, 75, 90, 120, 150, 180].map(s => `<option value="${s}" ${s === restOf(null) ? "selected" : ""}>${restLabel(s)}</option>`).join("")}</select>
-      <div class="help">Vale para todos os exercícios, exceto os que você ajustou um a um. No treino, use "+30 s" quando precisar de mais tempo.</div></div></div>`;
+      <div class="help">Vale para todos os exercícios, exceto os que você ajustou um a um. No treino, use "+30 s" quando precisar de mais tempo.</div></div>
+      <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" data-act="bipesDescanso" ${S.settings.bipesDescanso === false ? "" : "checked"} style="width:20px;height:20px;accent-color:var(--strength)"> Bipes nos últimos 5 segundos do descanso</label></div>`;
 
     // caminhada
     const w = S.settings.walk;
@@ -284,6 +285,7 @@ views.perfil = {
     if (f) f.addEventListener("change", () => { if (f.files[0]) onBackupFile(f.files[0]); f.value = ""; });
   }
 };
+changes.bipesDescanso = el => { S.settings.bipesDescanso = el.checked; flush("kv", "settings"); setStatus(el.checked ? "Bipes do descanso ligados" : "Bipes do descanso desligados"); };
 changes.restPadrao = el => { S.settings.restPadrao = parseInt(el.value, 10) || 60; flush("kv", "settings"); setStatus("Descanso padrão: " + restLabel(S.settings.restPadrao)); };
 actions.goPlano = () => go("treinos", "plano");
 actions.tema = el => { S.settings.tema = el.dataset.v; aplicarTema(S.settings.tema); flush("kv", "settings"); render(); };

@@ -100,9 +100,12 @@ export function tick(){
 }
 setInterval(tick, 1000);
 
-const rest = { end: 0, total: 0, iv: null, label: "" };
+const rest = { end: 0, total: 0, iv: null, label: "", bip: null };
+// bipes curtos em 5-4-3-2-1 no fim do descanso (Perfil → Plano de treino; ligado por padrão)
+const bipesDescanso = () => !(S.settings && S.settings.bipesDescanso === false);
 export function startRest(sec, label = ""){
-  rest.total = sec; rest.end = Date.now() + sec * 1000; rest.label = label;
+  rest.total = sec; rest.end = Date.now() + sec * 1000; rest.label = label; rest.bip = null;
+  if (bipesDescanso()) bipeCurto(0.001); // libera o som no toque do ✓ (o celular exige um gesto)
   restScheduled(rest.end, label); // app Android: cronômetro na tela de bloqueio + alarme no fim
   $("#rest").style.display = "flex";
   clearInterval(rest.iv); rest.iv = setInterval(restTick, 250); restTick();
@@ -121,11 +124,13 @@ function restTick(){
     setTimeout(() => { if (rest.end - Date.now() <= 0) $("#rest").style.display = "none"; }, 4000);
     return;
   }
+  const seg = Math.ceil(left / 1000);
+  if (seg <= 5 && seg >= 1 && rest.bip !== seg && bipesDescanso()){ rest.bip = seg; bipeCurto(); }
   $("#restT").textContent = dur(left + 999);
   $("#restBar").style.width = Math.max(0, Math.min(100, left / (rest.total * 1000) * 100)) + "%";
 }
 actions["rest-add"] = () => {
-  rest.end = Math.max(rest.end, Date.now()) + 30000; rest.total += 30;
+  rest.end = Math.max(rest.end, Date.now()) + 30000; rest.total += 30; rest.bip = null;
   $("#rest").style.display = "flex";
   restScheduled(rest.end, rest.label);
   clearInterval(rest.iv); rest.iv = setInterval(restTick, 250); restTick();
@@ -134,6 +139,16 @@ actions["rest-stop"] = () => stopRest();
 actions.rest = el => startRest(parseInt(el.dataset.s, 10));
 
 let audioCtx = null;
+function bipeCurto(vol = 0.3){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime;
+    o.type = "square"; o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.start(t); o.stop(t + 0.14);
+  }catch(e){}
+}
 function beep(){
   try{
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
