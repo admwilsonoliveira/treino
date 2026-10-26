@@ -6,7 +6,8 @@ import { esc, num, fmtNum, ymd, ddmm, ddmmyyyy, newId, horaCampoHtml, lerHora, d
 import { addDias, horaAgora } from "../medicacao.js";
 import { buscarOFF } from "../codigobarras.js";
 import { pedirCodigo } from "./alimentacao.js";
-import { FORMAS, UNIDADES, COMPOSICAO, UI_POR_UG_VITD, suplementosList, usosList, usosDo, nomeSup, fmtDose, emUso, nutrientesDaDose, resumoPeriodo } from "../suplementos.js";
+import { nutri } from "../alimentos.js";
+import { FORMAS, UNIDADES, COMPOSICAO, TABELA, VITMIN, UN_ATIVO, ATIVOS_MAX, suplementosList, usosList, usosDo, nomeSup, fmtDose, emUso, nutrientesDaDose, resumoPeriodo } from "../suplementos.js";
 
 const hoje = () => ymd(new Date());
 actions.goSuplementos = () => go("saude", "suplementos");
@@ -76,19 +77,33 @@ actions.supUsoApagar = () => { if (!confirm("Apagar este registro?")) return; de
 
 /* ---------- cadastro ---------- */
 function cadastroHtml(s, pre){
-  const a = s || pre || {}, comp = a.comp || {}, lb = a.lembrete || { ativo: false, hora: "08:00" };
-  const vComp = (k, un) => comp[k] == null ? "" : fmtNum(k === "vitD" ? comp[k] * UI_POR_UG_VITD : comp[k], 2);
+  const a = s || pre || {}, comp = a.comp || {}, lb = a.lembrete || { ativo: false, hora: "08:00" }, ativos = (a.ativos || []).slice();
+  while (ativos.length < ATIVOS_MAX) ativos.push({});
+  const v = k => comp[k] == null ? "" : fmtNum(comp[k], 3);
+  const campo = ([k, l, un]) => `<div class="field"><label class="lab" for="sp-${k}"><span>${l}</span> <span class="small muted sp-un" data-un="${un}">(${un})</span></label><input id="sp-${k}" class="txt" inputmode="decimal" value="${v(k)}"></div>`;
   return `<h3>${s ? "Editar suplemento" : "Cadastrar suplemento"}</h3>
     ${pre && pre.aviso ? `<div class="infobox" style="margin-top:8px">${esc(pre.aviso)}</div>` : ""}
     <div class="grid2"><div class="field"><label class="lab" for="sp-nome">Nome *</label><input id="sp-nome" class="txt" maxlength="50" value="${esc(a.nome || "")}" placeholder="Creatina monohidratada"></div>
       <div class="field"><label class="lab" for="sp-marca">Marca</label><input id="sp-marca" class="txt" maxlength="40" value="${esc(a.marca || "")}"></div></div>
     <div class="field"><span class="lab">Forma</span><div class="chips">${FORMAS.map(([k, l]) => `<button type="button" class="chip" data-act="spForma" data-v="${k}" aria-pressed="${a.forma === k}">${l}</button>`).join("")}</div></div>
-    <div class="grid2"><div class="field"><label class="lab" for="sp-dose">Dose padrão *</label><input id="sp-dose" class="txt" inputmode="decimal" value="${a.dose != null ? fmtNum(a.dose, 2) : ""}" placeholder="3"></div>
+    <div class="grid2"><div class="field"><label class="lab" for="sp-dose">Dose (porção do rótulo) *</label><input id="sp-dose" class="txt" inputmode="decimal" value="${a.dose != null ? fmtNum(a.dose, 2) : ""}" placeholder="3"></div>
       <div class="field"><label class="lab" for="sp-un">Unidade</label><select id="sp-un" class="txt">${UNIDADES.map(u => `<option ${(a.unidade || "g") === u ? "selected" : ""}>${u}</option>`).join("")}</select></div></div>
-    <details class="field" ${Object.keys(comp).length ? "open" : ""}><summary class="lab">Composição por dose (opcional, do rótulo)</summary>
-      <div class="help">Entra nas vitaminas da semana numa linha separada, "com suplementos". Vitamina D em UI (o app converte).</div>
-      <div class="grid2">${COMPOSICAO.map(([k, l, un]) => `<div class="field"><label class="lab" for="sp-${k}">${l} (${un})</label><input id="sp-${k}" class="txt" inputmode="decimal" value="${vComp(k, un)}"></div>`).join("")}</div></details>
-    <div class="field"><span class="lab">Lembrete diário (app Android)</span><div class="row" style="align-items:center"><div class="yn"><button type="button" data-act="spLemb" data-v="1" aria-pressed="${!!lb.ativo}">Sim</button><button type="button" data-act="spLemb" data-v="0" aria-pressed="${!lb.ativo}">Não</button></div>${horaCampoHtml("sp-hora", lb.hora || "08:00")}</div></div>
+
+    <h3 style="margin-top:16px">Tabela nutricional</h3>
+    <p class="small muted" style="margin:4px 0 0">Copie do rótulo os valores <strong>da porção</strong> (a mesma dose acima). Deixe em branco o que o rótulo não tem.</p>
+    <div class="grid2">${TABELA.map(campo).join("")}</div>
+
+    <div class="between" style="margin-top:12px"><strong class="small">Vitaminas e minerais</strong><div class="yn" style="max-width:240px"><button type="button" data-act="spVd" data-v="abs" aria-pressed="true">Quantidade</button><button type="button" data-act="spVd" data-v="vd" aria-pressed="false">%VD</button></div></div>
+    <div class="help">Se o rótulo traz só o %VD, toque em "%VD": o app converte pelos valores de referência da Anvisa (IN 75/2020). Vitamina D em UI? Divida por 40 (2.000 UI = 50 µg).</div>
+    <div class="grid2">${VITMIN.map(campo).join("")}</div>
+
+    <h3 style="margin-top:16px">Outros componentes</h3>
+    <p class="small muted" style="margin:4px 0 0">O que não é vitamina nem mineral, por porção: creatina, cafeína, colágeno, BCAA, beta-alanina...</p>
+    ${ativos.map((x, i) => `<div class="row" style="gap:6px;margin-top:6px;flex-wrap:nowrap"><input id="sp-at-n${i}" class="txt" maxlength="30" placeholder="${i === 0 ? "Creatina" : "Componente"}" value="${esc(x.nome || "")}" aria-label="Componente ${i + 1}" style="flex:2;min-width:0">
+      <input id="sp-at-q${i}" class="txt" inputmode="decimal" placeholder="${i === 0 ? "3" : "qtd."}" value="${x.qtd != null ? fmtNum(x.qtd, 3) : ""}" aria-label="Quantidade" style="flex:1;min-width:0"><select id="sp-at-u${i}" class="txt" aria-label="Unidade" style="flex:1;min-width:0">${UN_ATIVO.map(u => `<option ${(x.un || "g") === u ? "selected" : ""}>${u}</option>`).join("")}</select></div>`).join("")}
+
+    <div class="field" style="margin-top:14px"><label class="lab" for="sp-obs">Informações adicionais</label><textarea id="sp-obs" class="txt" rows="3" maxlength="500" placeholder="Tudo o que não coube acima: outros ingredientes, modo de uso, observações do rótulo...">${esc(a.obs || "")}</textarea></div>
+    <div class="field" style="margin-top:14px"><span class="lab">Lembrete diário (app Android)</span><div class="row" style="align-items:center"><div class="yn"><button type="button" data-act="spLemb" data-v="1" aria-pressed="${!!lb.ativo}">Sim</button><button type="button" data-act="spLemb" data-v="0" aria-pressed="${!lb.ativo}">Não</button></div>${horaCampoHtml("sp-hora", lb.hora || "08:00")}</div></div>
     <div class="err" id="sp-err"></div>
     <div class="row" style="margin-top:16px"><button class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn strength" data-act="supSalvar">Salvar</button></div>
     ${s ? `<div class="row" style="margin-top:10px"><button class="btn danger" data-act="supApagar">Apagar este suplemento</button></div>` : ""}`;
@@ -97,13 +112,25 @@ function abrirCadastro(s, pre = null){ const a = s || pre || {}; openModal(cadas
 actions.supNovo = () => abrirCadastro(null);
 actions.supEditar = el => abrirCadastro(S.suplementos[el.dataset.id]);
 actions.spForma = el => { modalState.forma = el.dataset.v; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === el))); };
+// vitaminas e minerais em quantidade ou em %VD (só muda o rótulo dos campos; a conversão é ao salvar)
+actions.spVd = el => {
+  modalState.vd = el.dataset.v === "vd";
+  el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === el)));
+  VITMIN.forEach(([k]) => { const sp = document.querySelector(`label[for="sp-${k}"] .sp-un`); if (sp) sp.textContent = modalState.vd ? "(%VD)" : "(" + sp.dataset.un + ")"; });
+};
 actions.spLemb = el => { modalState.lembrete = el.dataset.v === "1"; el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === el))); };
 actions.supSalvar = () => {
   const nome = $("#sp-nome").value.trim(), dose = num($("#sp-dose").value);
   if (!nome || !(dose > 0)){ $("#sp-err").textContent = "Informe o nome e a dose padrão."; return; }
-  const id = modalState.id || newId("sp"), comp = {};
-  COMPOSICAO.forEach(([k]) => { const v = num($("#sp-" + k).value); if (v != null) comp[k] = k === "vitD" ? v / UI_POR_UG_VITD : v; });
-  S.suplementos[id] = { id, nome, marca: $("#sp-marca").value.trim(), forma: modalState.forma, dose, unidade: $("#sp-un").value, comp, ean: modalState.ean || undefined,
+  const id = modalState.id || newId("sp"), comp = {}, ativos = [];
+  TABELA.forEach(([k]) => { const v = num($("#sp-" + k).value); if (v != null) comp[k] = v; });
+  VITMIN.forEach(([k]) => {
+    const v = num($("#sp-" + k).value); if (v == null) return;
+    const vd = (nutri(k) || [])[3];
+    comp[k] = modalState.vd && vd ? v / 100 * vd : v; // %VD → quantidade (IN 75/2020, Anexo II)
+  });
+  for (let i = 0; i < ATIVOS_MAX; i++){ const n = $("#sp-at-n" + i).value.trim(), q = num($("#sp-at-q" + i).value); if (n && q != null) ativos.push({ nome: n, qtd: q, un: $("#sp-at-u" + i).value }); }
+  S.suplementos[id] = { id, nome, marca: $("#sp-marca").value.trim(), forma: modalState.forma, dose, unidade: $("#sp-un").value, comp, ativos, obs: $("#sp-obs").value.trim(), ean: modalState.ean || undefined,
     lembrete: { ativo: !!modalState.lembrete, hora: lerHora("sp-hora") || "08:00" }, criado: (S.suplementos[id] || {}).criado || new Date().toISOString() };
   flush("suplementos", id); closeModal(); setStatus("Suplemento salvo"); render();
 };

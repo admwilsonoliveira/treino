@@ -8,10 +8,17 @@ import { addDias, diasAte } from "./medicacao.js";
 
 export const FORMAS = [["po", "Pó"], ["capsula", "Cápsula"], ["comprimido", "Comprimido"], ["gotas", "Gotas"], ["liquido", "Líquido"], ["outro", "Outro"]];
 export const UNIDADES = ["g", "mg", "mcg", "UI", "cápsula", "comprimido", "gotas", "ml", "scoop"];
-// nutrientes que aparecem no cadastro (por dose); vitamina D é digitada em UI e guardada em µg (1 µg = 40 UI)
-export const COMPOSICAO = [["prot", "Proteína", "g"], ["vitD", "Vitamina D", "UI"], ["b12", "Vitamina B12", "µg"], ["folato", "Folato / ácido fólico", "µg"], ["calcio", "Cálcio", "mg"],
-  ["ferro", "Ferro", "mg"], ["magnesio", "Magnésio", "mg"], ["zinco", "Zinco", "mg"], ["vitC", "Vitamina C", "mg"], ["vitA", "Vitamina A", "µg"], ["vitE", "Vitamina E", "mg"],
-  ["vitK", "Vitamina K", "µg"], ["b6", "Vitamina B6", "mg"], ["selenio", "Selênio", "µg"], ["omega3", "Ômega-3 (EPA + DHA)", "g"], ["kcal", "Calorias", "kcal"]];
+// tabela nutricional do rótulo, por dose (porção): macronutrientes e vitaminas/minerais (chaves do banco de alimentos)
+export const TABELA = [["kcal", "Valor energético", "kcal"], ["carb", "Carboidratos", "g"], ["acucar", "Açúcares totais", "g"], ["prot", "Proteínas", "g"],
+  ["gord", "Gorduras totais", "g"], ["sat", "Gorduras saturadas", "g"], ["fibra", "Fibra alimentar", "g"], ["sodio", "Sódio", "mg"]];
+export const VITMIN = [["vitA", "Vitamina A", "µg"], ["vitD", "Vitamina D", "µg"], ["vitE", "Vitamina E", "mg"], ["vitK", "Vitamina K", "µg"], ["vitC", "Vitamina C", "mg"],
+  ["b1", "Tiamina (B1)", "mg"], ["b2", "Riboflavina (B2)", "mg"], ["b3", "Niacina (B3)", "mg"], ["b6", "Vitamina B6", "mg"], ["b12", "Vitamina B12", "µg"], ["folato", "Ácido fólico / folato", "µg"],
+  ["calcio", "Cálcio", "mg"], ["ferro", "Ferro", "mg"], ["magnesio", "Magnésio", "mg"], ["zinco", "Zinco", "mg"], ["selenio", "Selênio", "µg"], ["potassio", "Potássio", "mg"],
+  ["fosforo", "Fósforo", "mg"], ["cobre", "Cobre", "mg"], ["manganes", "Manganês", "mg"], ["omega3", "Ômega-3 (EPA + DHA)", "g"]];
+export const COMPOSICAO = TABELA.concat(VITMIN);
+// outros componentes do rótulo que não são nutrientes (creatina, cafeína, colágeno, BCAA...): { nome, qtd, un }
+export const UN_ATIVO = ["g", "mg", "mcg"];
+export const ATIVOS_MAX = 5;
 export const UI_POR_UG_VITD = 40;
 const hoje = () => ymd(new Date());
 
