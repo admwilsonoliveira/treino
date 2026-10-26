@@ -10,6 +10,8 @@ import { addDias, horaAgora } from "../medicacao.js";
 import { PERIODOS_ALIM, baixarRelAlimentar } from "../relalimentar.js";
 import { tdeeAdaptativo } from "../nutricao.js";
 import { diagnostico } from "../diagnostico.js";
+import { buscarOFF, meuPorCodigo } from "../codigobarras.js";
+import { pedirCodigo } from "./alimentacao.js";
 
 const hoje = () => ymd(new Date());
 const kg = v => fmtNum(v, v >= 100 ? 0 : 1);
@@ -206,15 +208,38 @@ function telaBusca(){
   updateModal(`<div class="between"><h3>Adicionar alimento</h3><button class="linkbtn" data-act="refVoltar">Voltar</button></div>
     <input class="txt" id="rf-q" type="search" placeholder="Buscar (ex.: arroz, ovo, whey)" data-act="refBusca" value="${esc(modalState.q || "")}" autocomplete="off" style="margin-top:8px">
     <div class="small muted" style="margin-top:8px">${modalState.q ? "" : "Recentes e favoritos"}</div><div id="rf-res">${listaAlimentos(modalState.q)}</div>
-    <p class="small muted" style="margin:8px 0 0">Não achou um industrializado? Cadastre pelo rótulo em Saúde → Alimentação → Meus alimentos.</p>`);
+    <button class="btn ghost block" data-act="refScan" style="margin-top:10px">Escanear código de barras</button>
+    <p class="small muted" style="margin:8px 0 0">Não achou um industrializado? Escaneie o código ou cadastre pelo rótulo em Saúde → Alimentação → Meus alimentos.</p>`);
   const i = $("#rf-q"); if (i) i.focus();
 }
 inputs.refBusca = el => { modalState.q = el.value; const r = $("#rf-res"); if (r) r.innerHTML = listaAlimentos(el.value); };
+// código de barras dentro da refeição: produto já salvo vai direto para a quantidade; do Open Food Facts, confere e salva
+actions.refScan = () => { lerCampos(); pedirCodigo(async ean => {
+  const meu = meuPorCodigo(ean);
+  if (meu){ actions.refEscolher({ dataset: { id: meu.id } }); return; }
+  updateModal(`<div class="loading">Buscando o produto…</div>`);
+  const r = await buscarOFF(ean);
+  if (!r.produto){ updateModal(`<h3>Código ${esc(ean)}</h3><p class="small" style="margin-top:8px">${esc(r.erro || "Este produto não está no Open Food Facts. Cadastre pelo rótulo em Saúde → Alimentação → Meus alimentos; da próxima vez o app acha pelo código.")}</p>
+    <div class="row" style="margin-top:14px"><button class="btn ghost block" data-act="refAddItem">Voltar</button></div>`); return; }
+  const p = r.produto, por = p.porcaoG || 100, v = (k, un) => p[k] != null ? fmtNum(p[k] * por / 100, 1) + " " + un : "sem dado";
+  modalState.offProduto = p;
+  updateModal(`<h3>${esc(p.nome || "Produto sem nome")}</h3><div class="small muted">${esc(p.marca || "")} · código ${esc(ean)}</div>
+    <div class="infobox" style="margin-top:8px">Do Open Food Facts. <strong>Confira com a embalagem</strong>; se algo estiver errado, corrija depois em Saúde → Alimentação → Meus alimentos.</div>
+    <p class="small" style="margin-top:8px">Por ${p.porcaoG ? fmtNum(por) + " g (porção)" : "100 g"}: ${v("kcal", "kcal")} · proteína ${v("prot", "g")} · carboidratos ${v("carb", "g")} · gorduras ${v("gord", "g")} · sódio ${v("sodio", "mg")}</p>
+    ${p.semNutrientes ? `<p class="small" style="color:var(--walk)">O produto veio sem tabela nutricional. Melhor cadastrar pelo rótulo.</p>` : ""}
+    <div class="row" style="margin-top:14px"><button class="btn ghost" data-act="refAddItem">Voltar</button>${p.semNutrientes ? "" : `<button class="btn strength" data-act="refOffUsar">Salvar e usar</button>`}</div>`);
+}, true); };
+actions.refOffUsar = () => {
+  const p = modalState.offProduto; if (!p) return;
+  const id = newId("a"), a = Object.assign({ id, f: "meu", grupo: "Meus alimentos", criado: new Date().toISOString() }, p, { nome: p.nome || "Produto " + p.ean, marca: p.marca || "" });
+  delete a.semNutrientes; S.alimentos[id] = a; flush("alimentos", id); modalState.offProduto = null;
+  actions.refEscolher({ dataset: { id } });
+};
 actions.refEscolher = el => { modalState.escolha = { id: el.dataset.id, g: null, medida: null }; const a = alimento(el.dataset.id), m = medidas(a)[0]; modalState.escolha.g = m ? m.g : 100; modalState.escolha.medida = m ? m.n : null; telaQtd(); };
 function telaQtd(){
   const e = modalState.escolha, a = alimento(e.id), ms = medidas(a), v = paraGramas(a, e.g);
   updateModal(`<div class="between"><h3>${esc(nomeCompleto(a))}</h3><button class="linkbtn" data-act="refAddItem">Voltar</button></div>
-    <div class="field"><span class="lab">Quanto?</span><div class="chips">${ms.map((m, i) => `<button type="button" class="chip" data-act="refMed" data-i="${i}" aria-pressed="${e.medida === m.n}">${esc(m.n)} (${fmtNum(m.g)} g)</button>`).join("")}</div>
+    <div class="field"><span class="lab">Quanto?</span><div class="chips">${ms.slice(0, 10).map((m, i) => `<button type="button" class="chip" data-act="refMed" data-i="${i}" aria-pressed="${e.medida === m.n}">${esc(m.n)} (${fmtNum(m.g)} g)</button>`).join("")}</div>
       <div class="rng" style="margin-top:8px"><input class="txt" id="rf-g" type="text" inputmode="decimal" value="${fmtNum(e.g)}" data-act="refG" style="max-width:120px"><span>gramas</span></div>
       ${e.medida ? `<div class="grid2" style="margin-top:6px"><span class="small muted">Quantas?</span><div class="row" style="gap:6px">${[0.5, 1, 1.5, 2, 3].map(x => `<button type="button" class="chip" data-act="refMult" data-v="${x}">${fmtNum(x, 1)}×</button>`).join("")}</div></div>` : ""}</div>
     <div class="small" id="rf-prev">${prevHtml(v)}</div>

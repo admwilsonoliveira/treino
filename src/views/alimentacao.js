@@ -4,6 +4,8 @@ import { S, flush, setStatus } from "../store.js";
 import { ui, actions, inputs, render, openModal, updateModal, closeModal, modalState } from "../ui.js";
 import { esc, num, fmtNum, newId, $ } from "../util.js";
 import { diarioHtml } from "./diario.js";
+import { isNative } from "../native.js";
+import { lerCodigo, buscarOFF, meuPorCodigo, codigoValido, FONTE_OFF } from "../codigobarras.js";
 import { NUTRIENTES, nutri, VITAMINAS_ROTULO, carregarBanco, bancoPronto, fontes, meusAlimentos, alimento, nomeCompleto, buscar, medidas, paraGramas, ehFavorito } from "../alimentos.js";
 
 const SELO = { TACO: "TACO", USDA: "USDA", IBGE: "IBGE", meu: "meu" };
@@ -17,11 +19,12 @@ export function alimentacaoHtml(){
   h += `<h2>Banco de alimentos</h2><div class="panel"><input class="txt" id="al-q" type="search" placeholder="Buscar alimento (ex.: feijao, ovo, frango)" data-act="alBusca" value="${esc(ui.alBusca || "")}" autocomplete="off">
     <div id="al-res" style="margin-top:8px">${resultadosHtml(ui.alBusca || "")}</div></div>`;
   const meus = meusAlimentos();
+  h += `<button class="btn ghost block" data-act="alScan" style="margin-top:12px">Escanear código de barras</button>`;
   h += `<div class="between"><h2>Meus alimentos</h2><button class="linkbtn" data-act="alRotulo">+ Cadastrar pelo rótulo</button></div><div class="panel">
     ${meus.length ? `<ul class="hist">${meus.map(a => `<li><button class="linkbtn al-item" data-act="alVer" data-id="${esc(a.id)}">${esc(nomeCompleto(a))}</button><button class="del" data-act="alRotulo" data-id="${esc(a.id)}">Editar</button></li>`).join("")}</ul>`
       : `<p class="small muted" style="margin:0">Industrializados que não estão na tabela (ex.: o seu whey, uma barra de proteína): cadastre pela tabela nutricional do rótulo.</p>`}</div>`;
   const fo = fontes();
-  h += `<p class="small muted" style="margin-top:14px">Fontes: ${esc(fo.TACO || "")}. ${esc(fo.USDA || "")}. ${esc(fo.IBGE || "")}. Nutriente sem dado aparece como "sem dado", não como zero.</p>`;
+  h += `<p class="small muted" style="margin-top:14px">Fontes: ${esc(fo.TACO || "")}. ${esc(fo.USDA || "")}. ${esc(fo.IBGE || "")}. Código de barras: ${esc(FONTE_OFF)}. Nutriente sem dado aparece como "sem dado", não como zero.</p>`;
   return h;
 }
 function resultadosHtml(q){
@@ -79,10 +82,14 @@ actions.alMedSalvar = () => {
 /* ---------- cadastro pelo rótulo (RDC 429/2020 e IN 75/2020) ---------- */
 const CAMPOS_ROTULO = [["kcal", "Valor energético (kcal)", true], ["carb", "Carboidratos (g)", true], ["acucar", "Açúcares totais (g)"], ["acucarAd", "Açúcares adicionados (g)"],
   ["prot", "Proteínas (g)", true], ["gord", "Gorduras totais (g)", true], ["sat", "Gorduras saturadas (g)"], ["trans", "Gorduras trans (g)"], ["fibra", "Fibra alimentar (g)"], ["sodio", "Sódio (mg)"]];
-actions.alRotulo = el => {
-  const a = el && el.dataset && el.dataset.id ? S.alimentos[el.dataset.id] : null, p = a ? a.porcaoG : null;
+actions.alRotulo = el => abrirRotulo(el && el.dataset && el.dataset.id ? S.alimentos[el.dataset.id] : null);
+// pre: produto vindo do código de barras (valores por 100 g), para conferir antes de salvar
+function abrirRotulo(salvo, pre = null){
+  const a = salvo || pre, p = a ? a.porcaoG || (pre ? 100 : null) : null;
   const porPorcao = k => a && a[k] != null && p ? fmtNum(a[k] * p / 100, 2) : "";
-  openModal(`<h3>${a ? "Editar alimento" : "Cadastrar pelo rótulo"}</h3>
+  const avisoOff = pre ? (pre.off ? `<div class="infobox" style="margin-top:8px">Encontrado no Open Food Facts (código ${esc(pre.ean)}). <strong>Confira com a embalagem</strong>: quem cadastra é a comunidade e às vezes falta um valor ou a porção está errada.${pre.porcaoG ? "" : " A porção não veio: os valores abaixo estão por 100 g."}</div>`
+    : `<div class="infobox" style="margin-top:8px">O código ${esc(pre.ean)} não está no Open Food Facts. Cadastre pelo rótulo: da próxima vez que escanear, o app acha o produto.</div>`) : "";
+  openModal(`<h3>${salvo ? "Editar alimento" : pre && pre.off ? "Conferir produto" : "Cadastrar pelo rótulo"}</h3>${avisoOff}
     <p class="small muted" style="margin-top:6px">Copie da tabela nutricional da embalagem os valores <strong>por porção</strong>. O app guarda por 100 g.</p>
     <div class="grid2"><div class="field"><label class="lab" for="ro-nome">Nome *</label><input id="ro-nome" class="txt" type="text" maxlength="60" value="${esc(a ? a.nome : "")}" placeholder="Whey protein isolado"></div>
       <div class="field"><label class="lab" for="ro-marca">Marca *</label><input id="ro-marca" class="txt" type="text" maxlength="40" value="${esc(a ? a.marca : "")}"></div></div>
@@ -94,9 +101,9 @@ actions.alRotulo = el => {
       <div class="help">Se o rótulo traz só o %VD, escolha "%VD": o app converte com os valores de referência da IN 75/2020 (Anvisa).</div>
       <div class="grid2">${VITAMINAS_ROTULO.map(k => { const n = nutri(k); return `<div class="field"><label class="lab" for="ro-${k}"><span>${esc(n[1])}</span> <span class="small muted ro-un" data-un="${n[2]}">(${n[2]})</span></label><input id="ro-${k}" class="txt" type="text" inputmode="decimal" value="${porPorcao(k)}"></div>`; }).join("")}</div></details>
     <div class="err" id="ro-err"></div>
-    <div class="row" style="margin-top:16px"><button class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn strength" data-act="roSalvar" data-id="${esc(a ? a.id : "")}">Salvar</button></div>
-    ${a ? `<div class="row" style="margin-top:10px"><button class="btn danger" data-act="roApagar" data-id="${esc(a.id)}">Apagar este alimento</button></div>` : ""}`, { un: "abs" });
-};
+    <div class="row" style="margin-top:16px"><button class="btn ghost" data-act="closeModal">Cancelar</button><button class="btn strength" data-act="roSalvar" data-id="${esc(salvo ? salvo.id : "")}">Salvar</button></div>
+    ${salvo ? `<div class="row" style="margin-top:10px"><button class="btn danger" data-act="roApagar" data-id="${esc(salvo.id)}">Apagar este alimento</button></div>` : ""}`, { un: "abs", ean: a && a.ean || null, off: !!(a && a.off) });
+}
 actions.roUn = el => {
   modalState.un = el.dataset.v;
   el.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === el ? "true" : "false"));
@@ -107,6 +114,7 @@ actions.roSalvar = el => {
   const falta = CAMPOS_ROTULO.filter(c => c[2] && num($("#ro-" + c[0]).value) == null).map(c => c[1].replace(/ \(.*\)/, ""));
   if (!nome || !marca || !(p > 0) || falta.length){ $("#ro-err").textContent = "Preencha os campos com *" + (falta.length ? ": " + falta.join(", ") : "") + "."; return; }
   const id = el.dataset.id || newId("a"), a = { id, nome, marca, porcaoG: p, medida: $("#ro-medida").value.trim() || null, f: "meu", grupo: "Meus alimentos", criado: (S.alimentos[id] || {}).criado || new Date().toISOString() };
+  if (modalState.ean){ a.ean = modalState.ean; if (modalState.off) a.off = true; }
   const por100 = v => v * 100 / p;
   CAMPOS_ROTULO.forEach(([k]) => { const v = num($("#ro-" + k).value); if (v != null) a[k] = por100(v); });
   VITAMINAS_ROTULO.forEach(k => {
@@ -116,6 +124,26 @@ actions.roSalvar = el => {
   });
   S.alimentos[id] = a; flush("alimentos", id); closeModal(); setStatus("Alimento salvo"); render();
 };
+/* ---------- código de barras ---------- */
+// abre o leitor (APK) ou pede o número (navegador) e devolve o código por callback
+export function pedirCodigo(fn, emModal = false){
+  if (isNative){ lerCodigo(t => setStatus(t)).then(c => { if (c) fn(c); }).catch(() => alert("Não foi possível abrir o leitor de código de barras.")); return; }
+  const html = `<h3>Código de barras</h3><p class="small muted" style="margin-top:6px">No navegador, digite os números que ficam embaixo das barras. No app Android, a câmera lê sozinha.</p>
+    <div class="field"><input id="cb-num" class="txt" inputmode="numeric" maxlength="14" placeholder="7891234567890" autofocus></div><div class="err" id="cb-err"></div>
+    <div class="row" style="margin-top:14px"><button class="btn ghost" data-act="${emModal ? "refVoltar" : "closeModal"}">Voltar</button><button class="btn strength" data-act="cbOk">Buscar</button></div>`;
+  cbFn = fn; if (emModal) updateModal(html); else openModal(html);
+  setTimeout(() => { const i = $("#cb-num"); if (i) i.focus(); }, 50);
+}
+let cbFn = null;
+actions.cbOk = () => { const v = $("#cb-num").value.replace(/\D/g, ""); if (!codigoValido(v)){ $("#cb-err").textContent = "O código tem de 8 a 14 números."; return; } const f = cbFn; cbFn = null; f(v); };
+actions.alScan = () => pedirCodigo(async ean => {
+  const meu = meuPorCodigo(ean);
+  if (meu){ closeModal(); actions.alVer({ dataset: { id: meu.id } }); return; }
+  setStatus("Buscando o produto…");
+  const r = await buscarOFF(ean); setStatus("");
+  if (r.erro){ alert(r.erro); return; }
+  abrirRotulo(null, r.produto || { ean, off: false });
+});
 actions.roApagar = el => {
   if (!confirm("Apagar este alimento? Registros antigos que o usam ficam com os valores já calculados.")) return;
   delete S.alimentos[el.dataset.id]; flush("alimentos", el.dataset.id); closeModal(); render();
