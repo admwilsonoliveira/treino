@@ -6,7 +6,7 @@ import { esc, num, fmtNum, newId, $ } from "../util.js";
 import { diarioHtml } from "./diario.js";
 import { NUTRIENTES, nutri, VITAMINAS_ROTULO, carregarBanco, bancoPronto, fontes, meusAlimentos, alimento, nomeCompleto, buscar, medidas, paraGramas, ehFavorito } from "../alimentos.js";
 
-const SELO = { TACO: "TACO", USDA: "USDA", meu: "meu" };
+const SELO = { TACO: "TACO", USDA: "USDA", IBGE: "IBGE", meu: "meu" };
 const fmtV = (v, un) => v == null ? `<span class="muted">sem dado</span>` : fmtNum(v, v >= 100 ? 0 : v >= 10 ? 1 : 2) + " " + un;
 actions.goAlimentacao = () => { ui.tab = "saude"; ui.sub = "alimentacao"; render(); window.scrollTo(0, 0); };
 
@@ -21,7 +21,7 @@ export function alimentacaoHtml(){
     ${meus.length ? `<ul class="hist">${meus.map(a => `<li><button class="linkbtn al-item" data-act="alVer" data-id="${esc(a.id)}">${esc(nomeCompleto(a))}</button><button class="del" data-act="alRotulo" data-id="${esc(a.id)}">Editar</button></li>`).join("")}</ul>`
       : `<p class="small muted" style="margin:0">Industrializados que não estão na tabela (ex.: o seu whey, uma barra de proteína): cadastre pela tabela nutricional do rótulo.</p>`}</div>`;
   const fo = fontes();
-  h += `<p class="small muted" style="margin-top:14px">Fontes: ${esc(fo.TACO || "")}. ${esc(fo.USDA || "")}. Nutriente sem dado aparece como "sem dado", não como zero.</p>`;
+  h += `<p class="small muted" style="margin-top:14px">Fontes: ${esc(fo.TACO || "")}. ${esc(fo.USDA || "")}. ${esc(fo.IBGE || "")}. Nutriente sem dado aparece como "sem dado", não como zero.</p>`;
   return h;
 }
 function resultadosHtml(q){
@@ -47,7 +47,7 @@ function detalhe(){
   const principais = NUTRIENTES.filter(n => n[4]), outros = NUTRIENTES.filter(n => !n[4] && v[n[0]] != null);
   const semDado = NUTRIENTES.filter(n => !n[4] && v[n[0]] == null).map(n => n[1]);
   updateModal(`<div class="between"><h3>${esc(nomeCompleto(a))}</h3><button class="linkbtn" data-act="closeModal">Fechar</button></div>
-    <div class="small muted">${esc(a.grupo || (a.f === "meu" ? "Cadastrado por você" : ""))} · fonte: ${a.f === "meu" ? "rótulo" : esc(a.f)}${a.usda && a.f === "TACO" ? " + USDA (vit. D, B12, folato, E, K e selênio)" : ""}</div>
+    <div class="small muted">${esc(a.grupo || (a.f === "meu" ? "Cadastrado por você" : ""))} · fonte: ${a.f === "meu" ? (a.off ? "Open Food Facts (conferido por você)" : "rótulo") : a.f === "IBGE" ? "IBGE (POF 2008-2009, como consumido)" : esc(a.f)}${a.usda && a.f === "TACO" ? " + USDA (vit. D, B12, folato, E, K e selênio)" : ""}</div>
     <div class="field"><span class="lab">Quantidade</span><div class="chips">${ms.map((m, i) => `<button type="button" class="chip" data-act="alMed" data-i="${i}" aria-pressed="${Math.abs(m.g - g) < 0.01}">${esc(m.n)} (${fmtNum(m.g)} g)</button>`).join("")}
       <button type="button" class="chip" data-act="alMedNova">+ medida</button></div>
       <div class="rng" style="margin-top:8px"><input class="txt" id="al-g" type="text" inputmode="decimal" value="${fmtNum(g)}" data-act="alG" style="max-width:120px"><span>gramas</span></div></div>

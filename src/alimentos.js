@@ -1,7 +1,8 @@
 // Banco de alimentos (módulo Saúde): TACO 4ª ed. (NEPA/Unicamp) + 6 micronutrientes do USDA FoodData Central
-// (SR Legacy, CC0) nos alimentos frequentes + alimentos cadastrados pelo usuário a partir do rótulo.
+// (SR Legacy, CC0) nos alimentos frequentes + preparações e medidas caseiras do IBGE (POF 2008-2009)
+// + alimentos cadastrados pelo usuário (rótulo ou código de barras via Open Food Facts).
 // Valores sempre por 100 g. Nutriente sem dado = null (desconhecido), nunca zero.
-// O arquivo src/data/alimentos.json é gerado por scripts/dados/gera_banco.py (não editar à mão).
+// O arquivo src/data/alimentos.json é gerado por scripts/dados/gera_banco.py + ibge2json.cjs (não editar à mão).
 import { S } from "./store.js";
 import { norm, num } from "./util.js";
 
@@ -81,7 +82,7 @@ export function buscar(q, limite = 30){
 }
 
 /* ---------- porções ---------- */
-// medidas caseiras: as do banco (USDA, traduzidas), a porção do rótulo e as que o usuário criou
+// medidas caseiras: as do banco (USDA traduzidas e IBGE), a porção do rótulo e as que o usuário criou
 export function medidas(a){
   const out = [];
   if (a.porcaoG) out.push({ n: a.medida ? a.medida : "1 porção", g: a.porcaoG });
