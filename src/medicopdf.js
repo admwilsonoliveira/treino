@@ -10,6 +10,7 @@ import { examesList, padrao, serie, sinal, fli, tyg } from "./exames.js";
 import { indiceForca, variacao4 } from "./forca.js";
 import { stopBangUltimo, stopBangRisco } from "./habitos.js";
 import { manutencao, faixaAlvo, decisoesList, nomeDecisao } from "./manutencao.js";
+import { textoEmUso } from "./suplementos.js";
 
 const pdfTxt = s => String(s == null ? "" : s).replace(/[–—]/g, "-").replace(/−/g, "-").replace(/…/g, "...").replace(/→/g, "->").replace(/≥/g, ">=").replace(/≤/g, "<=").replace(/[^\x00-\xFF]/g, "");
 const f = (v, d = 1) => (v == null || !isFinite(v) ? "-" : fmtNum(v, d));
@@ -107,8 +108,12 @@ export async function pdfMedico(){
   }
 
   // suplementos, anestesia e perguntas
-  const sup = (sd.suplementos || []).join(", ");
-  txt("Suplementos em uso: " + (sup || "nenhum informado"), M, y + 3, { s: 7.5 }); y += 5;
+  // registrados no app (últimos 30 dias) + o que foi anotado à mão
+  const registrados = textoEmUso(30), soNomes = registrados.map(t => t.split(" ")[0].toLowerCase());
+  const extra = (sd.suplementos || []).filter(x => !soNomes.includes(String(x).split(" ")[0].toLowerCase()));
+  const sup = registrados.concat(extra).join("; ");
+  doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...tinta);
+  doc.splitTextToSize(pdfTxt("Suplementos em uso (30 dias): " + (sup || "nenhum informado")), W).slice(0, 2).forEach(l => { doc.text(l, M, y + 3); y += 3.6; }); y += 1.4;
   if (sd.medicamento === "tirzepatida"){ txt(ANESTESIA, M, y + 3, { s: 7.5, b: 1, c: roxo }); y += 5; }
   const perg = String(sd.perguntasMedico || "").trim();
   txt("Perguntas para o médico", M, y + 4, { b: 1, s: 9.5 }); y += 6;

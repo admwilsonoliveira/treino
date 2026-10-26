@@ -13,6 +13,7 @@ import { bancoPronto } from "./alimentos.js";
 import { habitosList } from "./habitos.js";
 import { filaAlertas } from "./alertas.js";
 import { duracaoMin } from "./forca.js";
+import { resumoPeriodo, fmtDose } from "./suplementos.js";
 
 const f = (v, d = 1) => (v == null || !isFinite(v) ? "–" : fmtNum(v, d));
 const sn = (v, d = 1) => (v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + fmtNum(Math.abs(v), d));
@@ -49,6 +50,10 @@ export function resumoSemana(ini = semanaAtual()){
   s2.paragrafos.push(ds.length ? ds.map(d => `Dose ${ddmm(d.date)}${d.doseMg ? ": " + f(num(d.doseMg)) + " mg" : ""}${d.local ? " (" + nomeLocal(d.local) + ")" : ""}`).join(" · ") : "Nenhuma dose registrada.");
   if (ss.length) s2.tabelas.push({ head: ["Data", "Sintoma", "Intensidade (0–10)"], body: ss.map(x => [ddmm(x.date), nomeSintoma(x.tipo), x.intensidade != null ? x.intensidade : "–"]) });
   else s2.paragrafos.push("Nenhum sintoma registrado.");
+
+  // suplementos
+  const sp = resumoPeriodo(ini, fim);
+  if (sp.length) sec("Suplementos").tabelas.push({ head: ["Suplemento", "Dias", "Doses", "Dose média", "Horário"], body: sp.map(r => [r.nome, `${r.dias}/7`, r.vezes, fmtDose(r.doseMedia, r.unidade).trim(), r.horario || "–"]) });
 
   // medidas
   const fs = fitaList().filter(naSemana), dbs = dobrasList().filter(naSemana);

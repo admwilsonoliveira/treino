@@ -15,6 +15,7 @@ import { refeicoesDo, totaisDe, aguaTotal, metas, nomeTipo, tdeeAdaptativo } fro
 import { analise } from "./vitaminas.js";
 import { mondayOf } from "./util.js";
 import { habitosList, stopBangList, tabagismo } from "./habitos.js";
+import { suplementosList, usosList, resumoPeriodo, fmtDose, nomeSup } from "./suplementos.js";
 
 const f = (v, d = 1) => (v == null || !isFinite(v) ? "–" : fmtNum(v, d));
 const sn = (v, d = 1) => (v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + fmtNum(Math.abs(v), d));
@@ -217,6 +218,17 @@ export function dadosCompletos(){
       if (sbs.length) s.tabelas.push({ head: ["Data", "STOP-Bang", "Ronco alto", "Cansaço", "Pausas observadas", "Pressão alta"], body: sbs.map(x => [dt(x.date), x.pontos + "/8", x.resp.S ? "sim" : "não", x.resp.T ? "sim" : "não", x.resp.O ? "sim" : "não", x.resp.P ? "sim" : "não"]) });
       if (tb.status) s.paragrafos.push("Cigarro: " + (tb.status === "parou" ? "parou em " + dt(tb.parouEm) : tb.status === "fuma" ? "fuma" : "nunca fumou") + ".");
     }
+  }
+
+  // suplementos: cadastro e consumo por mês
+  if (saude && (suplementosList().length || usosList().some(noPer))){
+    const s = sec("Suplementos"), us = usosList().filter(noPer);
+    if (suplementosList().length) s.tabelas.push({ t: "Cadastrados", head: ["Suplemento", "Dose padrão", "Composição por dose"], body: suplementosList().map(x => [nomeSup(x), fmtDose(x.dose, x.unidade).trim(),
+      Object.entries(x.comp || {}).map(([k, v]) => k === "vitD" ? f(v * 40, 0) + " UI vit. D" : f(v, 2) + " " + k).join(", ") || "–"]) });
+    const meses = [...new Set(us.map(u => u.date.slice(0, 7)))];
+    meses.forEach(m => { const fimMes = ymd(new Date(+m.slice(0, 4), +m.slice(5, 7), 0)); const rs = resumoPeriodo(m + "-01", fimMes > ate ? ate : fimMes);
+      if (rs.length) s.tabelas.push({ t: "Consumo em " + m.slice(5) + "/" + m.slice(0, 4), head: ["Suplemento", "Dias", "Doses", "Dose média", "Horário"], body: rs.map(r => [r.nome, `${r.dias}/${r.totalDias}`, r.vezes, fmtDose(r.doseMedia, r.unidade).trim(), r.horario || "–"]) }); });
+    s.notas.push("Registro do que foi tomado; o app não sugere suplementos nem doses.");
   }
 
   return { titulo: "Relatório completo de saúde e treino", sub: `${p.nome || ""} · ${dt(de)} a ${dt(ate)} · gerado em ${dt(ate)}`, de, ate, secoes };

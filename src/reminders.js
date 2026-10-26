@@ -37,7 +37,8 @@ export function scheduleAll(){
   // check-in da noite (módulo Saúde), texto genérico
   const lc = Object.assign({ ativo: true, hora: "21:00" }, (sd && sd.lembreteCheckin) || {});
   const checkin = sd && sd.ativo && lc.ativo ? { hora: lc.hora, title: "Check-in da noite", body: "Sono, fome, humor e estresse: leva 20 segundos." } : null;
-  return scheduleReminders({ treinos, walk, dose, avaliacao, checkin });
+  const suplementos = sd && sd.ativo ? Object.values(S.suplementos || {}).filter(x => x.lembrete && x.lembrete.ativo).map(x => ({ hora: x.lembrete.hora, title: "Lembrete de suplemento", body: x.nome + ": registre no app depois de tomar." })) : [];
+  return scheduleReminders({ treinos, walk, dose, avaliacao, checkin, suplementos });
 }
 
 function primeiroSabado(d){ const x = new Date(d.getFullYear(), d.getMonth(), 1, 12); while (x.getDay() !== 6) x.setDate(x.getDate() + 1); return x; }

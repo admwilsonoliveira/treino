@@ -9,6 +9,7 @@ import { examesList, padrao } from "./exames.js";
 import { NUTRIENTES } from "./alimentos.js";
 import { nomeTipo } from "./nutricao.js";
 import { habitosList } from "./habitos.js";
+import { usosList } from "./suplementos.js";
 
 const v = x => { if (x == null || x === "") return ""; if (typeof x === "number") return String(Math.round(x * 100) / 100).replace(".", ","); const s = String(x); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 const csv = (head, rows) => "﻿" + [head].concat(rows).map(r => r.map(v).join(";")).join("\r\n");
@@ -29,6 +30,7 @@ export const MODULOS_CSV = [
   ["agua", "Água", () => csv(["Data", "Hora", "ml"], Object.values(S.agua || {}).sort((a, b) => (a.date + (a.hora || "")).localeCompare(b.date + (b.hora || ""))).map(a => [a.date, a.hora, nn(a.ml)]))],
   ["habitos", "Hábitos (check-in)", () => csv(["Data", "Sono (h)", "Qualidade (1-5)", "Ronco (0-2)", "Sonolência (0-2)", "Estresse (1-5)", "Fome (1-5)", "Humor (1-5)", "Cigarros", "Álcool (doses)", "Passos", "FC repouso"],
     habitosList().map(h => [h.date, nn(h.sonoH), h.sonoQ, h.ronco, h.sonolencia, h.estresse, h.fome, h.humor, nn(h.cigarros), nn(h.alcool), nn(h.passos), nn(h.fc)]))],
+  ["suplementos", "Suplementos (consumo)", () => csv(["Data", "Hora", "Suplemento", "Dose", "Unidade"], usosList().map(u => [u.date, u.hora, u.nome, nn(u.dose), u.unidade]))],
   ["eventos", "Eventos", () => csv(["Data", "Tipo", "Descrição"], eventosList().map(e => [e.date, nomeEvento(e.tipo), e.descricao]))]
 ];
 

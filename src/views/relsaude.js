@@ -33,7 +33,7 @@ export function relSaudeHtml(){
 
   // médico
   h += `<h2>Para o médico</h2><div class="panel"><p class="small" style="margin:0">Uma página com peso e faixas de dose, cintura, FLI, doses, efeitos colaterais, últimos exames, força, STOP-Bang e suplementos.</p>
-    <div class="field"><label class="lab" for="rs-sup">Suplementos em uso (separe por vírgula)</label><input id="rs-sup" class="txt" data-act="rsSup" value="${esc((sd.suplementos || []).join(", "))}" placeholder="ex.: creatina 3 g"></div>
+    <div class="field"><label class="lab" for="rs-sup">Outros suplementos (separe por vírgula)</label><div class="help">Os registrados em Saúde → Suplementos já entram sozinhos, com dose e frequência.</div><input id="rs-sup" class="txt" data-act="rsSup" value="${esc((sd.suplementos || []).join(", "))}" placeholder="ex.: creatina 3 g"></div>
     <div class="field"><label class="lab" for="rs-perg">Perguntas para o médico</label><textarea id="rs-perg" class="txt" rows="4" data-act="rsPerg" placeholder="Anote durante o mês. Vão no fim do PDF.">${esc(sd.perguntasMedico || "")}</textarea></div>
     <button class="btn strength block" data-act="rsPdfMedico">Gerar PDF de 1 página</button></div>`;
 

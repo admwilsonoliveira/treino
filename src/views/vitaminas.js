@@ -7,6 +7,7 @@ import { addDias } from "../medicacao.js";
 import { refeicoesDo, totaisDe } from "../nutricao.js";
 import { carregarBanco, bancoPronto, itensBanco, alimento, nomeCompleto } from "../alimentos.js";
 import { analise, sugestoesDaSemana, guardarSemana, prefs, MIN_DIAS } from "../vitaminas.js";
+import { mediaSuplementos } from "../suplementos.js";
 
 const COR = { baixo: "var(--danger)", atencao: "var(--walk)", ok: "var(--sucesso)" };
 const ROT = { baixo: "baixo", atencao: "atenção", ok: "ok" };
@@ -37,10 +38,12 @@ export function vitaminasHtml(){
   if (guardarSemana(r)) flush("kv", "saude");
   if (!r.ok) return h + `<div class="panel"><p class="small" style="margin:0">Registre mais dias para a análise: são precisos pelo menos ${MIN_DIAS} dias com refeições nos últimos 7 (agora: ${r.dias}).</p>
     <button class="btn strength" data-act="goAlimentacao" style="margin-top:10px">Ir para a Alimentação</button></div>` + prefsBotao();
-  h += `<div class="panel"><div class="small muted" style="margin-bottom:6px">Média dos últimos ${r.dias} dias com registro</div>
+  const sup = mediaSuplementos(r.fim); // média diária vinda dos suplementos registrados (linha separada)
+  h += `<div class="panel"><div class="small muted" style="margin-bottom:6px">Média dos últimos ${r.dias} dias com registro (só comida)</div>
     ${r.itens.map(x => `<div class="vit-linha"><div class="between small"><span><strong>${esc(x.nome)}</strong>${x.exame ? ` <span class="selo-exame">seu exame também</span>` : ""}</span>
       <span>${fmtV(x.media, x.un)} <span class="muted">/ ${fmtV(x.meta, x.un)}</span> <strong style="color:${COR[x.classe] || "var(--ink-2)"}">${x.pct != null ? fmtNum(x.pct, 0) + "%" : ""}</strong></span></div>
       <div class="barra-t"><i style="width:${Math.min(100, x.pct || 0)}%;background:${COR[x.classe] || "var(--ink-2)"}"></i></div>
+      ${sup[x.k] > 0 && x.un !== "dias" && x.meta ? `<div class="small" style="margin-top:2px">Com suplementos: ${fmtV(x.media + sup[x.k], x.un)} <strong>${fmtNum((x.media + sup[x.k]) / x.meta * 100, 0)}%</strong></div>` : ""}
       ${x.cob < 70 && x.un !== "dias" ? `<div class="small muted">Só ${x.cob}% do que você comeu tinha dado deste nutriente: o valor real provavelmente é maior.</div>` : ""}</div>`).join("")}
     <p class="small muted" style="margin:10px 0 0">Abaixo de 70% = baixo · 70 a 99% = atenção · 100% ou mais = ok. Metas diárias (DRI, homens de 31 a 50 anos).</p></div>`;
   const sug = sugestoesDaSemana(r);

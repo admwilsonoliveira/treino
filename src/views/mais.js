@@ -12,7 +12,7 @@ views.mais = {
 };
 
 // Registro rápido: cada botão chama a mesma janela usada nas telas
-const RAPIDO = [["refNova", "Refeição"], ["aguaRapida", "Água"], ["addMedida", "Peso"], ["doseNova", "Dose"], ["fitaNova", "Medidas com fita"], ["dobrasNova", "Dobras"], ["sintomaNovo", "Sintoma"], ["checkinNovo", "Check-in da noite"], ["eventoNovo", "Evento"]];
+const RAPIDO = [["refNova", "Refeição"], ["aguaRapida", "Água"], ["addMedida", "Peso"], ["doseNova", "Dose"], ["fitaNova", "Medidas com fita"], ["dobrasNova", "Dobras"], ["sintomaNovo", "Sintoma"], ["supRapido", "Suplemento"], ["checkinNovo", "Check-in da noite"], ["eventoNovo", "Evento"]];
 actions.rapido = () => openModal(`<h3>Registrar</h3><div class="acoes">${RAPIDO.map(([a, l]) => `<button type="button" data-act="rapidoIr" data-v="${a}">${l}</button>`).join("")}</div>
   <div class="row" style="margin-top:16px"><button class="btn ghost block" data-act="closeModal">Fechar</button></div>`);
 actions.goRelCompleto = () => { ui.tab = "evolucao"; ui.sub = null; ui.evoView = "relatorio"; render(); window.scrollTo(0, 0); };
