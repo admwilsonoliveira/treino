@@ -38,6 +38,7 @@ function dorNoExercicio(exId, sessaoAtual){
 
 // Retorna { tipo: "subir" | "manter" | "abaixo" | "limite" | "bloqueado" | "deload" | "reps", texto, kg? } ou null
 export function sugestao(it, ex, sessaoAtual, semana){
+  if (ex.tipo === "cardio" || ex.tipo === "mob") return null; // aeróbico e mobilidade não têm progressão de carga
   const last = lastSetsFor(it.exId, sessaoAtual && sessaoAtual.id);
   if (!last) return null;
   const faixa = faixaReps(it.rx);

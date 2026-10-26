@@ -1,5 +1,6 @@
 // Editar um treino ou caminhada já registrados (corrigir carga, repetições, horário, km, dor).
 // Trabalha numa cópia (rascunho); só grava ao tocar em "Salvar".
+import { colunaReps } from "../data/exercises.js";
 import { S, flush, getEx, kcalOf, dorLabel, setStatus } from "../store.js";
 import { ui, actions, inputs, go, rerenderKeepScroll } from "../ui.js";
 import { esc, num, fmtNum, ddmmyyyy, timeOf, clone, $ } from "../util.js";
@@ -33,7 +34,7 @@ export function editarHtml(){
     h += `<h2>Séries</h2>`;
     ordem.forEach(id => {
       const ex = getEx(id), sets = (s.sets || {})[id] || [];
-      h += `<div class="ex"><h3>${esc(ex.nome)}</h3><div class="set-cols"><span>Série</span><span>${ex.load === false ? "" : "Carga (" + esc(ex.unit || "kg") + ")"}</span><span>Repetições</span><span></span></div><div class="sets">`;
+      h += `<div class="ex"><h3>${esc(ex.nome)}</h3><div class="set-cols"><span>Série</span><span>${ex.load === false ? "" : "Carga (" + esc(ex.unit || "kg") + ")"}</span><span>${colunaReps(ex)}</span><span></span></div><div class="sets">`;
       sets.forEach((x, i) => {
         h += `<div class="set"><label>Série ${i + 1}</label>
           ${ex.load === false ? "<span></span>" : `<input type="text" inputmode="decimal" aria-label="Carga série ${i + 1}" data-act="edS" data-ex="${esc(id)}" data-i="${i}" data-k="kg" value="${esc(x.kg ? String(x.kg).replace(".", ",") : "")}">`}

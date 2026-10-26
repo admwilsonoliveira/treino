@@ -3,6 +3,7 @@ import { S, save, flush, setStatus, activePlan, planLetters, treinoForDay, activ
 import { ui, views, actions, inputs, changes, render, go, rerenderKeepScroll, openModal, closeModal, modalState, scaleHtml, rangeHtml, startRest, stopRest } from "../ui.js";
 import { esc, num, fmtNum, ymd, ddmm, restLabel, yt, newId, timeOf, pad, $ } from "../util.js";
 import { viewPlanos, viewPlanoEditor, templatesHtml, videoUrl, lombarTag } from "./plano.js";
+import { colunaReps } from "../data/exercises.js";
 import { viewResumo, summaryCard } from "./equilibrio.js";
 import { semanaInfo, seriesNaSemana } from "../programa.js";
 import { sugestao } from "../progressao.js";
@@ -99,7 +100,7 @@ function viewAtivo(s){
     h += `<div class="ex" id="ex-${esc(it.exId)}"><div class="ex-head"><div class="ex-top">${S.fotos[it.exId] ? fotoHtml(it.exId) : ""}<div><h3>${esc(ex.nome)}${it.extra ? ' <span class="tag">extra</span>' : ""}</h3><div class="rx">${esc(it.rx)}, ${esc(it.rir)}</div>${S.fotos[it.exId] ? "" : fotoHtml(it.exId)}</div></div><a class="vlink" href="${esc(videoUrl(ex))}" target="_blank" rel="noopener">Ver vídeo</a></div><p class="note">${esc(it.nota != null ? it.nota : ex.nota)}</p>`;
     if (last) h += `<div class="between" style="align-items:center"><div class="last">Última vez (${ddmm(last.date)}): ${setsSummary(last.sets, ex)}</div><button class="linkbtn" style="white-space:nowrap;margin-left:8px" data-act="repetir" data-ex="${esc(it.exId)}">↺ Repetir</button></div>`;
     h += sugHtml(sg);
-    h += `<div class="set-cols"><span>Série</span><span>${ex.load === false ? "" : "Carga (" + esc(unit) + ")"}</span><span>${ex.tipo === "core" && ex.load === false ? "Reps ou s" : "Repetições"}</span><span></span></div><div class="sets">`;
+    h += `<div class="set-cols"><span>Série</span><span>${ex.load === false ? "" : "Carga (" + esc(unit) + ")"}</span><span>${colunaReps(ex)}</span><span></span></div><div class="sets">`;
     sets.forEach((x, i) => {
       const ph = sugeridoPara(last, sg, i);
       h += `<div class="set"><label for="r-${esc(it.exId)}-${i}">Série ${i + 1}</label>`;

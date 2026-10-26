@@ -1,3 +1,4 @@
+import { EXERCISES2 } from "./exercises2.js";
 // Banco de exercícios do app.
 // IMPORTANTE: os IDs ficam gravados nos registros de treino. Não renomeie IDs sem migrar os dados.
 //
@@ -11,7 +12,7 @@
 export const GRUPOS = {
   peito: "Peito", costas: "Costas", ombros: "Ombros", biceps: "Bíceps", triceps: "Tríceps",
   quadriceps: "Quadríceps", posterior: "Posterior de coxa", gluteos: "Glúteos",
-  panturrilha: "Panturrilha", core: "Core e abdômen", outros: "Outros"
+  panturrilha: "Panturrilha", core: "Core e abdômen", aerobico: "Aeróbico", mobilidade: "Mobilidade e alongamento", outros: "Outros"
 };
 export const EQUIP = {
   halter: "Halteres", barra: "Barra", maquina: "Máquina", cabo: "Cabo/polia", corpo: "Peso do corpo", elastico: "Elástico", kettlebell: "Kettlebell"
@@ -138,10 +139,15 @@ export const EXERCISES = [
   E("abdominal_maquina", "Abdominal na máquina", "core", "maquina", "evitar", "core", "Flexão da coluna com carga.")
 ];
 
+EXERCISES.push(...EXERCISES2);
 export const EX_BASE_BY_ID = Object.fromEntries(EXERCISES.map(e => [e.id, e]));
+// aeróbico registra minutos e mobilidade segundos ou repetições, no campo de repetições
+export const colunaReps = ex => ex.tipo === "cardio" ? "Minutos" : ex.tipo === "mob" || (ex.tipo === "core" && ex.load === false) ? "Reps ou s" : "Repetições";
 
 // Prescrição padrão sugerida quando o exercício é adicionado a um treino
 export function defaultRx(ex){
+  if (ex.tipo === "cardio") return { series: 1, rx: "1 × 20 min", rir: "leve a moderado" };
+  if (ex.tipo === "mob") return { series: 2, rx: "2 × 30 s", rir: "sem dor" };
   if (ex.tipo === "core") return { series: 3, rx: "3 × 10–12", rir: "controle" };
   if (ex.tipo === "i") return { series: 3, rx: "3 × 10–15", rir: "RIR 0–1" };
   return { series: 3, rx: "3 × 8–12", rir: "RIR 1–2" };
